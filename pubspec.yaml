@@ -1,0 +1,60 @@
+name: untitled2
+description: KienCare Mobile Store - Ứng dụng mua sắm công nghệ chính hãng
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # State Management
+  provider: ^6.1.2
+
+  # Firebase (commented out - activate when configured)
+  # firebase_core: ^2.32.0
+  # firebase_auth: ^4.20.0
+  # cloud_firestore: ^4.17.5
+  # firebase_messaging: ^14.9.4
+  # firebase_analytics: ^10.10.7
+
+  # Storage
+  shared_preferences: ^2.3.2
+
+  # Network / Images
+  cached_network_image: ^3.4.1
+  http: ^1.2.2
+
+  # UI Components
+  carousel_slider: ^5.0.0
+  smooth_page_indicator: ^1.2.0+3
+  flutter_rating_bar: ^4.0.1
+  badges: ^3.1.2
+
+  # Utils
+  intl: ^0.19.0
+  uuid: ^4.4.2
+  url_launcher: ^6.3.1
+
+  # Icons (included via Material)
+  cupertino_icons: ^1.0.8
+
+  # Google Fonts (downloads Outfit at runtime)
+  google_fonts: ^6.2.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
+
+  # Uncomment when you have real asset files:
+  # assets:
+  #   - assets/images/
+  #   - assets/icons/
+
+  # No local fonts needed — using google_fonts package for Outfit
