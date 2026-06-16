@@ -96,7 +96,7 @@ class _SplashScreenState extends State<SplashScreen>
                     ),
                     child: const Center(
                       child: Text(
-                        'TC',
+                        'LH',
                         style: TextStyle(
                           fontSize: 42,
                           fontWeight: FontWeight.w900,
@@ -134,8 +134,8 @@ class _SplashScreenState extends State<SplashScreen>
                     height: 28,
                     child: CircularProgressIndicator(
                       strokeWidth: 2.5,
-                      valueColor:
-                          AlwaysStoppedAnimation(Colors.white.withValues(alpha: 0.6)),
+                      valueColor: AlwaysStoppedAnimation(
+                          Colors.white.withValues(alpha: 0.6)),
                     ),
                   ),
                 ],

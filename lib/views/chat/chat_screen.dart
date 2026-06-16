@@ -70,12 +70,12 @@ class _ChatScreenState extends State<ChatScreen> {
             Container(
               width: 36,
               height: 36,
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 gradient: AppColors.primaryGradient,
                 shape: BoxShape.circle,
               ),
               child: const Center(
-                child: Text('TC',
+                child: Text('LH',
                     style: TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.w800,
@@ -87,7 +87,8 @@ class _ChatScreenState extends State<ChatScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(AppStrings.supportTeam,
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
+                    style:
+                        TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
                 Text('Đang hoạt động',
                     style: TextStyle(
                         fontSize: 11,
@@ -119,8 +120,8 @@ class _ChatScreenState extends State<ChatScreen> {
                   itemCount: vm.messages.length,
                   itemBuilder: (_, i) {
                     final msg = vm.messages[i];
-                    final isMe = msg.senderId ==
-                        (_authVM.currentUser?.id ?? 'guest');
+                    final isMe =
+                        msg.senderId == (_authVM.currentUser?.id ?? 'guest');
                     return _MessageBubble(
                         message: msg, isMe: isMe, isDark: isDark);
                   },
@@ -238,12 +239,12 @@ class _MessageBubble extends StatelessWidget {
             Container(
               width: 28,
               height: 28,
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 gradient: AppColors.primaryGradient,
                 shape: BoxShape.circle,
               ),
               child: const Center(
-                child: Text('TC',
+                child: Text('LH',
                     style: TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.w800,
@@ -294,9 +295,7 @@ class _MessageBubble extends StatelessWidget {
                     '${message.timestamp.hour}:${message.timestamp.minute.toString().padLeft(2, '0')}',
                     style: TextStyle(
                       fontSize: 10,
-                      color: isMe
-                          ? Colors.white60
-                          : AppColors.textHint,
+                      color: isMe ? Colors.white60 : AppColors.textHint,
                     ),
                   ),
                 ],

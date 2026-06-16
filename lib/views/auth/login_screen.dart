@@ -108,6 +108,12 @@ class _LoginScreenState extends State<LoginScreen>
                         TextFormField(
                           key: const Key('email_field'),
                           controller: _emailCtrl,
+                          style: const TextStyle(
+                            color: AppColors.textPrimary,
+                            fontSize: 15,
+                          ),
+                          cursorColor: AppColors.primary,
+                          keyboardAppearance: Brightness.light,
                           keyboardType: TextInputType.emailAddress,
                           textInputAction: TextInputAction.next,
                           validator: AppValidators.email,
@@ -123,11 +129,18 @@ class _LoginScreenState extends State<LoginScreen>
                         TextFormField(
                           key: const Key('password_field'),
                           controller: _passwordCtrl,
+                          style: const TextStyle(
+                            color: AppColors.textPrimary,
+                            fontSize: 15,
+                          ),
+                          cursorColor: AppColors.primary,
+                          keyboardAppearance: Brightness.light,
                           obscureText: _obscurePassword,
                           textInputAction: TextInputAction.done,
                           onFieldSubmitted: (_) => _login(),
-                          validator: (v) =>
-                              v == null || v.isEmpty ? 'Mật khẩu không được để trống' : null,
+                          validator: (v) => v == null || v.isEmpty
+                              ? 'Mật khẩu không được để trống'
+                              : null,
                           decoration: InputDecoration(
                             labelText: AppStrings.password,
                             hintText: '••••••••',
@@ -136,8 +149,8 @@ class _LoginScreenState extends State<LoginScreen>
                               icon: Icon(_obscurePassword
                                   ? Icons.visibility_off_outlined
                                   : Icons.visibility_outlined),
-                              onPressed: () =>
-                                  setState(() => _obscurePassword = !_obscurePassword),
+                              onPressed: () => setState(
+                                  () => _obscurePassword = !_obscurePassword),
                             ),
                           ),
                         ),
@@ -163,7 +176,7 @@ class _LoginScreenState extends State<LoginScreen>
                               key: const Key('forgot_password'),
                               onPressed: () => Navigator.pushNamed(
                                   context, AppRoutes.forgotPassword),
-                              child: Text(
+                              child: const Text(
                                 AppStrings.forgotPassword,
                                 style: TextStyle(
                                   color: AppColors.secondary,
@@ -208,11 +221,14 @@ class _LoginScreenState extends State<LoginScreen>
                           children: [
                             const Expanded(child: Divider()),
                             Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 16),
                               child: Text(
                                 AppStrings.orContinueWith,
                                 style: TextStyle(
-                                  color: isDark ? Colors.white54 : AppColors.textSecondary,
+                                  color: isDark
+                                      ? Colors.white54
+                                      : AppColors.textSecondary,
                                   fontSize: 12,
                                 ),
                               ),
@@ -221,35 +237,6 @@ class _LoginScreenState extends State<LoginScreen>
                           ],
                         ),
                         const SizedBox(height: 16),
-
-                        // Demo Login Hint
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: AppColors.primarySurface.withValues(alpha: isDark ? 0.1 : 1),
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(
-                              color: AppColors.primary.withValues(alpha: 0.3),
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              const Icon(Icons.info_outline,
-                                  color: AppColors.primary, size: 18),
-                              const SizedBox(width: 8),
-                              const Expanded(
-                                child: Text(
-                                  'Demo: demo@kiencare.vn / KienCare1',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: AppColors.primary,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
 
                         const SizedBox(height: 32),
 
@@ -260,7 +247,9 @@ class _LoginScreenState extends State<LoginScreen>
                             Text(
                               AppStrings.noAccount,
                               style: TextStyle(
-                                color: isDark ? Colors.white54 : AppColors.textSecondary,
+                                color: isDark
+                                    ? Colors.white54
+                                    : AppColors.textSecondary,
                                 fontSize: 14,
                               ),
                             ),
@@ -295,28 +284,35 @@ class _LoginScreenState extends State<LoginScreen>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Logo
-        Container(
-          width: 64,
-          height: 64,
-          decoration: BoxDecoration(
-            gradient: AppColors.primaryGradient,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.primary.withValues(alpha: 0.4),
-                blurRadius: 20,
-                offset: const Offset(0, 8),
+        // Brand logo
+        Align(
+          alignment: Alignment.center,
+          child: Container(
+            width: 64,
+            height: 64,
+            decoration: BoxDecoration(
+              gradient: AppColors.primaryGradient,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: AppColors.secondary.withValues(alpha: 0.45),
               ),
-            ],
-          ),
-          child: const Center(
-            child: Text(
-              'TC',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.w900,
-                color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.primary.withValues(alpha: 0.3),
+                  blurRadius: 20,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: const Center(
+              child: Text(
+                'LH',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w900,
+                  color: AppColors.secondary,
+                  letterSpacing: -0.5,
+                ),
               ),
             ),
           ),

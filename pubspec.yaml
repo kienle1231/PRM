@@ -13,12 +13,9 @@ dependencies:
   # State Management
   provider: ^6.1.2
 
-  # Firebase (commented out - activate when configured)
-  # firebase_core: ^2.32.0
-  # firebase_auth: ^4.20.0
-  # cloud_firestore: ^4.17.5
-  # firebase_messaging: ^14.9.4
-  # firebase_analytics: ^10.10.7
+  # Firebase Authentication
+  firebase_core: ^4.10.0
+  firebase_auth: ^6.5.2
 
   # Storage
   shared_preferences: ^2.3.2

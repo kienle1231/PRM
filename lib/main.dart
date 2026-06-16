@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-// import 'package:firebase_core/firebase_core.dart'; // TODO: Firebase
+
 import 'app/app.dart';
+import 'repositories/auth_repository.dart';
+import 'services/firebase_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Lock to portrait orientation
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
 
-  // System UI Overlay style
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
@@ -22,16 +22,67 @@ Future<void> main() async {
     ),
   );
 
-  // TODO: Firebase — Uncomment after adding google-services.json and configuring Firebase
-  // try {
-  //   await Firebase.initializeApp(
-  //     options: DefaultFirebaseOptions.currentPlatform,
-  //   );
-  //   print('[KienCare] Firebase initialized successfully');
-  // } catch (e) {
-  //   print('[KienCare] Firebase initialization failed: $e');
-  //   print('[KienCare] Running in mock mode');
-  // }
+  final firebaseReady = await FirebaseService.initialize();
+  runApp(
+    firebaseReady
+        ? KienCareApp(authRepository: FirebaseAuthRepository())
+        : FirebaseSetupRequiredApp(
+            error: FirebaseService.initializationError,
+          ),
+  );
+}
 
-  runApp(const KienCareApp());
+class FirebaseSetupRequiredApp extends StatelessWidget {
+  const FirebaseSetupRequiredApp({super.key, this.error});
+
+  final Object? error;
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: Scaffold(
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.cloud_off_outlined, size: 64),
+                  const SizedBox(height: 20),
+                  const Text(
+                    'Firebase chưa được cấu hình',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'Thêm android/app/google-services.json và bật '
+                    'Email/Password trong Firebase Authentication, sau đó '
+                    'khởi động lại ứng dụng.',
+                    textAlign: TextAlign.center,
+                  ),
+                  if (error != null) ...[
+                    const SizedBox(height: 16),
+                    Text(
+                      error.toString(),
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Colors.red,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }

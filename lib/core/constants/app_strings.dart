@@ -1,7 +1,7 @@
-/// Centralized string constants for KienCare app (Vietnamese + English keys).
+/// Centralized string constants for LAPTOPHUB app (Vietnamese + English keys).
 abstract class AppStrings {
   // ── App Info ───────────────────────────────────────────────────────────────
-  static const String appName = 'KienCare';
+  static const String appName = 'LAPTOPHUB';
   static const String appTagline = 'Công nghệ chính hãng - Giá tốt nhất';
   static const String appVersion = '1.0.0';
 
@@ -28,12 +28,12 @@ abstract class AppStrings {
   static const String orContinueWith = 'hoặc';
 
   // ── Onboarding ────────────────────────────────────────────────────────────
-  static const String onboarding1Title = 'Hàng nghìn sản phẩm công nghệ';
+  static const String onboarding1Title = 'Laptop chính hãng – Đồng hành cùng thành công';
   static const String onboarding1Desc =
-      'Laptop, PC Gaming, Linh kiện, Phụ kiện — tất cả có mặt tại KienCare với giá tốt nhất.';
+      'Laptop, Linh kiện, Phụ kiện — tất cả có mặt tại LAPTOPHUB với giá tốt nhất.';
   static const String onboarding2Title = 'Giao hàng siêu nhanh';
   static const String onboarding2Desc =
-      'Nhận hàng trong 4-8 tiếng (nội thành) hoặc 1-3 ngày (tỉnh thành). Miễn phí ship đơn trên 500k.';
+      'Nhận hàng trong 2-5 tiếng (nội thành) hoặc 1-3 ngày (tỉnh thành khác). Miễn phí ship đơn trên 1999k.';
   static const String onboarding3Title = 'Hỗ trợ 24/7';
   static const String onboarding3Desc =
       'Đội ngũ tư vấn chuyên nghiệp luôn sẵn sàng giúp bạn chọn sản phẩm phù hợp nhất.';
@@ -98,7 +98,7 @@ abstract class AppStrings {
 
   // ── Chat ──────────────────────────────────────────────────────────────────
   static const String support = 'Hỗ trợ trực tuyến';
-  static const String supportTeam = 'KienCare Support';
+  static const String supportTeam = 'LAPTOPHUB Support';
   static const String chatHint = 'Nhập tin nhắn...';
 
   // ── Profile ───────────────────────────────────────────────────────────────

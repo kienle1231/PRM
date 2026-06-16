@@ -3,7 +3,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_strings.dart';
 
-/// KienCare store location data model.
+/// LAPTOPHUB store location data model.
 class _StoreLocation {
   final String name;
   final String address;
@@ -24,7 +24,7 @@ class _StoreLocation {
   });
 }
 
-/// Store location screen — shows KienCare locations with map and navigation.
+/// Store location screen — shows LAPTOPHUB locations with map and navigation.
 class StoreLocationScreen extends StatefulWidget {
   const StoreLocationScreen({super.key});
 
@@ -37,7 +37,7 @@ class _StoreLocationScreenState extends State<StoreLocationScreen> {
 
   static const List<_StoreLocation> _locations = [
     _StoreLocation(
-      name: 'KienCare - Lê Lợi (Chi nhánh chính)',
+      name: 'LAPTOPHUB - Lê Lợi (Chi nhánh chính)',
       address: '123 Lê Lợi, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh',
       phone: '028 1234 5678',
       hours: 'Thứ 2 - Chủ nhật: 8:00 - 21:00',
@@ -46,7 +46,7 @@ class _StoreLocationScreenState extends State<StoreLocationScreen> {
       isMainBranch: true,
     ),
     _StoreLocation(
-      name: 'KienCare - Nguyễn Văn Cừ',
+      name: 'LAPTOPHUB - Nguyễn Văn Cừ',
       address: '456 Nguyễn Văn Cừ, Phường 1, Quận 5, TP. Hồ Chí Minh',
       phone: '028 8765 4321',
       hours: 'Thứ 2 - Thứ 7: 8:30 - 20:30',
@@ -54,7 +54,7 @@ class _StoreLocationScreenState extends State<StoreLocationScreen> {
       lng: 106.6840,
     ),
     _StoreLocation(
-      name: 'KienCare - Cầu Giấy (Hà Nội)',
+      name: 'LAPTOPHUB - Cầu Giấy (Hà Nội)',
       address: '789 Cầu Giấy, Phường Dịch Vọng, Quận Cầu Giấy, Hà Nội',
       phone: '024 3333 4444',
       hours: 'Thứ 2 - Chủ nhật: 8:00 - 21:00',
@@ -62,7 +62,7 @@ class _StoreLocationScreenState extends State<StoreLocationScreen> {
       lng: 105.7922,
     ),
     _StoreLocation(
-      name: 'KienCare - Hải Phòng',
+      name: 'LAPTOPHUB - Hải Phòng',
       address: '321 Lê Lợi, Quận Ngô Quyền, Hải Phòng',
       phone: '0225 1111 2222',
       hours: 'Thứ 2 - Chủ nhật: 9:00 - 20:00',
@@ -187,7 +187,7 @@ class _StoreLocationScreenState extends State<StoreLocationScreen> {
                     ],
                   ),
                   child: const Text(
-                    '📍 ${_storeCount} cửa hàng KienCare',
+                    '📍 ${_storeCount} cửa hàng LAPTOPHUB',
                     style: TextStyle(
                       fontWeight: FontWeight.w700,
                       color: AppColors.primary,

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "92836567231",
+    "project_id": "laptophub-70e6e",
+    "storage_bucket": "laptophub-70e6e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:92836567231:android:d9977539b9e1604f2b0e0a",
+        "android_client_info": {
+          "package_name": "com.kiencare.mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDmFkNbYI9XPA3cjKipLDihqllY2CwxOuM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -83,9 +83,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
         ),
         const SizedBox(height: 8),
-        Text(
+        const Text(
           AppStrings.resetPasswordDesc,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 14,
             color: AppColors.textSecondary,
             height: 1.5,
@@ -124,8 +124,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                           strokeWidth: 2.5, color: Colors.white),
                     )
                   : const Text(AppStrings.sendResetLink,
-                      style: TextStyle(
-                          fontSize: 16, fontWeight: FontWeight.w700)),
+                      style:
+                          TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
             ),
           ),
         ),
@@ -152,12 +152,15 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           ),
           const SizedBox(height: 24),
           const Text(
-            'Email đã được gửi!',
+            'Đã tiếp nhận yêu cầu',
             style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 12),
           Text(
-            'Chúng tôi đã gửi link đặt lại mật khẩu đến\n${_emailCtrl.text.trim()}\nVui lòng kiểm tra hộp thư đến của bạn.',
+            'Nếu ${_emailCtrl.text.trim()} đã được đăng ký, Firebase sẽ gửi '
+            'link đặt lại mật khẩu trong vài phút.\n\n'
+            'Vui lòng kiểm tra cả mục Spam/Thư rác và xác nhận email được '
+            'nhập đúng.',
             textAlign: TextAlign.center,
             style: const TextStyle(
               fontSize: 14,

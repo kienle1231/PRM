@@ -9,7 +9,7 @@ enum AuthStatus { initial, loading, authenticated, unauthenticated, error }
 /// Manages authentication state across the app.
 /// Handles login, register, logout, remember-me, and password reset.
 class AuthViewModel extends ChangeNotifier {
-  final MockAuthRepository _repo;
+  final AuthRepository _repo;
 
   AuthStatus _status = AuthStatus.initial;
   UserModel? _currentUser;
@@ -48,6 +48,7 @@ class AuthViewModel extends ChangeNotifier {
           _status = AuthStatus.unauthenticated;
         }
       } else {
+        await _repo.signOut();
         _status = AuthStatus.unauthenticated;
       }
     } catch (_) {
@@ -70,6 +71,10 @@ class AuthViewModel extends ChangeNotifier {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setBool(_rememberMeKey, true);
         await prefs.setString(_savedEmailKey, email.trim());
+      } else {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.remove(_rememberMeKey);
+        await prefs.remove(_savedEmailKey);
       }
       notifyListeners();
       return true;
@@ -104,6 +109,7 @@ class AuthViewModel extends ChangeNotifier {
   Future<void> logout() async {
     await _repo.signOut();
     _currentUser = null;
+    _rememberMe = false;
     _status = AuthStatus.unauthenticated;
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_rememberMeKey);
@@ -148,6 +154,12 @@ class AuthViewModel extends ChangeNotifier {
   // ── Remember Me ───────────────────────────────────────────────────────────
   void setRememberMe(bool value) {
     _rememberMe = value;
+    if (!value) {
+      SharedPreferences.getInstance().then((prefs) async {
+        await prefs.remove(_rememberMeKey);
+        await prefs.remove(_savedEmailKey);
+      });
+    }
     notifyListeners();
   }
 

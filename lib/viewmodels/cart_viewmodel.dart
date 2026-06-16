@@ -61,8 +61,8 @@ class CartViewModel extends ChangeNotifier {
       _items.add(CartItemModel(
         productId: product.id,
         name: product.name,
-        price: product.price,
-        originalPrice: product.originalPrice,
+        price: product.price.toDouble(),
+        originalPrice: product.originalPrice.toDouble(),
         imageUrl: product.primaryImage,
         quantity: quantity,
       ));

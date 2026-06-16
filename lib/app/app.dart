@@ -20,12 +20,14 @@ import 'routes.dart';
 
 /// Root app widget with all providers and theme configured.
 class KienCareApp extends StatelessWidget {
-  const KienCareApp({super.key});
+  const KienCareApp({super.key, this.authRepository});
+
+  final AuthRepository? authRepository;
 
   @override
   Widget build(BuildContext context) {
     // ── Repositories (singletons) ─────────────────────────────────────────────
-    final authRepo = MockAuthRepository();
+    final authRepo = authRepository ?? MockAuthRepository();
     final productRepo = MockProductRepository();
     final cartRepo = SharedPrefsCartRepository();
     final orderRepo = MockOrderRepository();
@@ -73,7 +75,8 @@ class _AppView extends StatelessWidget {
       onGenerateRoute: generateRoute,
       theme: _buildLightTheme(),
       darkTheme: _buildDarkTheme(),
-      themeMode: ThemeMode.system,
+      // Dark mode will be enabled later through an in-app toggle.
+      themeMode: ThemeMode.light,
     );
   }
 
@@ -87,23 +90,33 @@ class _AppView extends StatelessWidget {
         primary: AppColors.primary,
         secondary: AppColors.secondary,
       ),
-      textTheme: GoogleFonts.outfitTextTheme(),
+      textTheme: GoogleFonts.outfitTextTheme().apply(
+        bodyColor: AppColors.textPrimary,
+        displayColor: AppColors.textPrimary,
+      ),
       scaffoldBackgroundColor: AppColors.backgroundLight,
       cardColor: AppColors.cardLight,
+      canvasColor: AppColors.backgroundLight,
+      textSelectionTheme: const TextSelectionThemeData(
+        cursorColor: AppColors.primary,
+        selectionColor: Color(0x330A0A0A),
+        selectionHandleColor: AppColors.primary,
+      ),
 
       // App Bar
       appBarTheme: const AppBarTheme(
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
+        backgroundColor: Colors.white,
+        foregroundColor: AppColors.textPrimary,
         elevation: 0,
         centerTitle: false,
         titleTextStyle: TextStyle(
           fontFamily: 'Outfit',
           fontSize: 18,
           fontWeight: FontWeight.w700,
-          color: Colors.white,
+          color: AppColors.textPrimary,
         ),
-        iconTheme: IconThemeData(color: Colors.white),
+        iconTheme: IconThemeData(color: AppColors.textPrimary),
+        surfaceTintColor: Colors.transparent,
       ),
 
       // Elevated Button
@@ -113,8 +126,8 @@ class _AppView extends StatelessWidget {
           foregroundColor: Colors.white,
           elevation: 4,
           shadowColor: AppColors.primary.withValues(alpha: 0.3),
-          shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           textStyle: const TextStyle(
             fontFamily: 'Outfit',
             fontWeight: FontWeight.w700,
@@ -128,8 +141,8 @@ class _AppView extends StatelessWidget {
         style: OutlinedButton.styleFrom(
           foregroundColor: AppColors.primary,
           side: const BorderSide(color: AppColors.primary),
-          shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           textStyle: const TextStyle(
             fontFamily: 'Outfit',
             fontWeight: FontWeight.w600,
@@ -153,6 +166,11 @@ class _AppView extends StatelessWidget {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: Colors.white,
+        floatingLabelStyle: const TextStyle(
+          fontFamily: 'Outfit',
+          color: AppColors.primary,
+          fontSize: 14,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: AppColors.borderLight),
@@ -163,8 +181,7 @@ class _AppView extends StatelessWidget {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide:
-              const BorderSide(color: AppColors.primary, width: 2),
+          borderSide: const BorderSide(color: AppColors.primary, width: 2),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -172,11 +189,10 @@ class _AppView extends StatelessWidget {
         ),
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide:
-              const BorderSide(color: AppColors.error, width: 2),
+          borderSide: const BorderSide(color: AppColors.error, width: 2),
         ),
-        contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16, vertical: 14),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         labelStyle: const TextStyle(
           fontFamily: 'Outfit',
           color: AppColors.textSecondary,
@@ -193,10 +209,12 @@ class _AppView extends StatelessWidget {
           fontSize: 12,
         ),
         prefixIconColor: AppColors.textHint,
+        suffixIconColor: AppColors.textSecondary,
       ),
 
       // Bottom Navigation Bar
       bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+        backgroundColor: Colors.white,
         selectedItemColor: AppColors.primary,
         unselectedItemColor: AppColors.textHint,
         showUnselectedLabels: true,
@@ -240,6 +258,8 @@ class _AppView extends StatelessWidget {
 
       // Dialog
       dialogTheme: DialogThemeData(
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
@@ -256,7 +276,6 @@ class _AppView extends StatelessWidget {
         color: AppColors.borderLight,
         thickness: 0.5,
       ),
-
     );
   }
 
@@ -298,8 +317,7 @@ class _AppView extends StatelessWidget {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide:
-              const BorderSide(color: AppColors.primaryLight, width: 2),
+          borderSide: const BorderSide(color: AppColors.primaryLight, width: 2),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -307,11 +325,10 @@ class _AppView extends StatelessWidget {
         ),
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide:
-              const BorderSide(color: AppColors.error, width: 2),
+          borderSide: const BorderSide(color: AppColors.error, width: 2),
         ),
-        contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16, vertical: 14),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         labelStyle: const TextStyle(
           fontFamily: 'Outfit',
           color: Colors.white60,

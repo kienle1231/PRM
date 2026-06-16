@@ -49,9 +49,10 @@ class ProductCard extends StatelessWidget {
             // Product Info
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
+                padding: const EdgeInsets.fromLTRB(10, 6, 10, 6),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.max,
                   children: [
                     // Category
                     Text(
@@ -62,7 +63,7 @@ class ProductCard extends StatelessWidget {
                         fontWeight: FontWeight.w500,
                       ),
                     ),
-                    const SizedBox(height: 3),
+                    const SizedBox(height: 2),
 
                     // Name
                     Text(
@@ -76,7 +77,11 @@ class ProductCard extends StatelessWidget {
                         height: 1.3,
                       ),
                     ),
-                    const Spacer(),
+                    const SizedBox(height: 4),
+
+                    // Compact specs
+                    _CompactSpecs(product: product),
+                    const SizedBox(height: 4),
 
                     // Original Price (strikethrough)
                     if (product.hasDiscount)
@@ -131,11 +136,11 @@ class _ProductImage extends StatelessWidget {
           borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
           child: CachedNetworkImage(
             imageUrl: product.primaryImage,
-            height: 140,
+            height: 120,
             width: double.infinity,
             fit: BoxFit.cover,
             placeholder: (_, __) => Container(
-              height: 140,
+              height: 120,
               color: AppColors.primarySurface,
               child: const Center(
                 child: CircularProgressIndicator(
@@ -145,7 +150,7 @@ class _ProductImage extends StatelessWidget {
               ),
             ),
             errorWidget: (_, __, ___) => Container(
-              height: 140,
+              height: 120,
               color: AppColors.primarySurface,
               child: const Center(
                 child:
@@ -249,6 +254,61 @@ class _AddToCartButton extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+/// Compact specs display for product card: CPU/RAM/Storage and GPU/Display.
+class _CompactSpecs extends StatelessWidget {
+  final ProductModel product;
+
+  const _CompactSpecs({required this.product});
+
+  String _abbrevCpu(String cpu) => cpu
+      .replaceAll('Intel Core ', '')
+      .replaceAll('AMD Ryzen ', 'R')
+      .replaceAll('Apple ', '')
+      .trim();
+
+  String _abbrevGpu(String gpu) => gpu
+      .replaceAll('NVIDIA GeForce ', '')
+      .replaceAll('NVIDIA ', '')
+      .replaceAll('AMD Radeon ', '')
+      .replaceAll('Intel Iris Xe', 'Iris Xe')
+      .replaceAll('Intel UHD', 'UHD')
+      .trim();
+
+  @override
+  Widget build(BuildContext context) {
+    final cpu = _abbrevCpu(product.cpu);
+    final ram = '${product.ramGB}GB';
+    final storage =
+        '${product.storage.capacityGB}GB ${product.storage.type}';
+    final gpu = _abbrevGpu(product.gpu);
+    final display = '${product.display.sizeInch}"';
+
+    const style = TextStyle(
+      fontSize: 9,
+      color: AppColors.textHint,
+      height: 1.4,
+    );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '$cpu • $ram • $storage',
+          style: style,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        Text(
+          '$gpu • $display',
+          style: style,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ],
     );
   }
 }

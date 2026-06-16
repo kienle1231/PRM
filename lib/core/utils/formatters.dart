@@ -10,10 +10,10 @@ abstract class AppFormatters {
   );
 
   /// Format price as Vietnamese Dong: ₫12,500,000
-  static String vnd(double price) => _vndFormat.format(price);
+  static String vnd(num price) => _vndFormat.format(price);
 
   /// Format savings: "Tiết kiệm ₫2,499,000"
-  static String savings(double original, double sale) {
+  static String savings(num original, num sale) {
     final saved = original - sale;
     return 'Tiết kiệm ${vnd(saved)}';
   }

@@ -96,7 +96,7 @@ class ProfileScreen extends StatelessWidget {
                     _MenuItem(
                       icon: Icons.info_outline_rounded,
                       iconColor: AppColors.textSecondary,
-                      label: 'Về KienCare',
+                      label: 'Về LAPTOPHUB',
                       onTap: () => _showAboutDialog(context),
                     ),
                     _MenuItem(
@@ -114,13 +114,13 @@ class ProfileScreen extends StatelessWidget {
 
                 // App version
                 Text(
-                  'KienCare v${AppStrings.appVersion}',
+                  'LAPTOPHUB v${AppStrings.appVersion}',
                   style: const TextStyle(
                       fontSize: 12, color: AppColors.textHint),
                 ),
                 const SizedBox(height: 8),
                 const Text(
-                  '© 2024 KienCare. All rights reserved.',
+                  '© 2026 LAPTOPHUB. All rights reserved.',
                   style: TextStyle(fontSize: 11, color: AppColors.textHint),
                 ),
                 const SizedBox(height: 32),
@@ -288,18 +288,18 @@ class ProfileScreen extends StatelessWidget {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Về KienCare'),
+        title: const Text('Về LAPTOPHUB'),
         content: const Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('KienCare Mobile Store v1.0.0'),
+            Text('LAPTOPHUB Mobile Store v1.0.0'),
             SizedBox(height: 8),
             Text('Ứng dụng mua sắm công nghệ chính hãng hàng đầu Việt Nam.'),
             SizedBox(height: 8),
-            Text('Địa chỉ: 123 Lê Lợi, Quận 1, TP.HCM'),
+            Text('FPT Đà Nẵng'),
             Text('Hotline: 1800 6789'),
-            Text('Email: support@kiencare.vn'),
+            Text('Email: support@LAPTOPHUB.vn'),
           ],
         ),
         actions: [
