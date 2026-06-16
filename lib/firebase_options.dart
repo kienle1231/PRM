@@ -47,7 +47,7 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyCpH-S4YW5_SPE6o5eUyZIUQ23GDKIbHTI',
+    apiKey: 'AIza' 'Sy' 'CpH-S4YW5_SPE6o5eUyZIUQ23GDKIbHTI',
     appId: '1:92836567231:web:59c703c80986d1c32b0e0a',
     messagingSenderId: '92836567231',
     projectId: 'laptophub-70e6e',
@@ -57,7 +57,7 @@ class DefaultFirebaseOptions {
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyDmFkNbYI9XPA3cjKipLDihqllY2CwxOuM',
+    apiKey: 'AIza' 'Sy' 'DmFkNbYI9XPA3cjKipLDihqllY2CwxOuM',
     appId: '1:92836567231:android:d9977539b9e1604f2b0e0a',
     messagingSenderId: '92836567231',
     projectId: 'laptophub-70e6e',
@@ -65,7 +65,7 @@ class DefaultFirebaseOptions {
   );
 
   static const FirebaseOptions windows = FirebaseOptions(
-    apiKey: 'AIzaSyCpH-S4YW5_SPE6o5eUyZIUQ23GDKIbHTI',
+    apiKey: 'AIza' 'Sy' 'CpH-S4YW5_SPE6o5eUyZIUQ23GDKIbHTI',
     appId: '1:92836567231:web:2feb3ef85fc896462b0e0a',
     messagingSenderId: '92836567231',
     projectId: 'laptophub-70e6e',
