@@ -38,7 +38,7 @@ class MockNotificationRepository implements NotificationRepository {
       NotificationModel(
         id: 'n003',
         title: '✅ Đơn hàng #TC20240001 đã giao thành công',
-        body: 'Cảm ơn bạn đã mua hàng tại KienCare. Hãy đánh giá sản phẩm nhé!',
+        body: 'Cảm ơn bạn đã mua hàng tại LAPTOPHUB. Hãy đánh giá sản phẩm nhé!',
         type: NotificationType.order,
         isRead: true,
         route: '/orders',
@@ -65,8 +65,8 @@ class MockNotificationRepository implements NotificationRepository {
       ),
       NotificationModel(
         id: 'n006',
-        title: '🏪 KienCare khai trương cửa hàng mới',
-        body: 'KienCare vừa khai trương thêm chi nhánh tại Quận 7, TP.HCM. Ghé thăm nhận quà!',
+        title: '🏪 LAPTOPHUB khai trương cửa hàng mới',
+        body: 'LAPTOPHUB vừa khai trương thêm chi nhánh tại Quận 7, TP.HCM. Ghé thăm nhận quà!',
         type: NotificationType.news,
         isRead: true,
         createdAt: now.subtract(const Duration(days: 5)),

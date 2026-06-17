@@ -23,16 +23,16 @@ class MockChatRepository implements ChatRepository {
       MessageModel(
         id: 'msg001',
         senderId: 'support',
-        senderName: 'KienCare Support',
-        text: '👋 Xin chào! Tôi là nhân viên hỗ trợ KienCare. Bạn cần tư vấn sản phẩm gì?',
+        senderName: 'LAPTOPHUB Support',
+        text: '👋 Xin chào! Tôi là nhân viên hỗ trợ LAPTOPHUB. Bạn cần tư vấn sản phẩm gì?',
         isRead: true,
         timestamp: now.subtract(const Duration(minutes: 5)),
       ),
       MessageModel(
         id: 'msg002',
         senderId: 'support',
-        senderName: 'KienCare Support',
-        text: '💻 Chúng tôi có thể tư vấn về Laptop, PC Gaming, Linh kiện và Phụ kiện. Hãy cho chúng tôi biết nhu cầu của bạn!',
+        senderName: 'LAPTOPHUB Support',
+        text: '💻 Chúng tôi có thể tư vấn về Laptop. Hãy cho chúng tôi biết nhu cầu của bạn!',
         isRead: true,
         timestamp: now.subtract(const Duration(minutes: 4, seconds: 30)),
       ),
@@ -102,13 +102,13 @@ class MockChatRepository implements ChatRepository {
     if (lower.contains('laptop') || lower.contains('máy tính xách tay')) {
       reply = '💻 Chúng tôi có nhiều dòng laptop phù hợp! Bạn cần laptop cho mục đích gì: học tập, làm việc hay gaming? Ngân sách dự kiến là bao nhiêu?';
     } else if (lower.contains('gaming') || lower.contains('game')) {
-      reply = '🎮 KienCare có đầy đủ PC Gaming từ tầm trung đến high-end. Bạn muốn chơi game ở độ phân giải nào? 1080p hay 1440p?';
+      reply = '🎮 LAPTOPHUB có đầy đủ PC Gaming từ tầm trung đến high-end. Bạn muốn chơi game ở độ phân giải nào? 1080p hay 1440p?';
     } else if (lower.contains('giá') || lower.contains('bao nhiêu') || lower.contains('price')) {
       reply = '💰 Bạn vui lòng cho biết tên sản phẩm cụ thể để chúng tôi báo giá chính xác nhé!';
     } else if (lower.contains('bảo hành') || lower.contains('warranty')) {
-      reply = '🛡️ KienCare cam kết bảo hành chính hãng. Laptop: 12-24 tháng. PC Gaming: 24 tháng. Linh kiện: 3-36 tháng tùy loại.';
+      reply = '🛡️ LAPTOPHUB cam kết bảo hành chính hãng. Laptop: 12-24 tháng. PC Gaming: 24 tháng. Linh kiện: 3-36 tháng tùy loại.';
     } else if (lower.contains('giao hàng') || lower.contains('ship') || lower.contains('delivery')) {
-      reply = '🚚 KienCare giao hàng toàn quốc. Nội thành HCM/HN: 4-8 giờ. Tỉnh thành khác: 1-3 ngày. Miễn phí ship đơn trên 500k!';
+      reply = '🚚 LAPTOPHUB giao hàng toàn quốc. Nội thành HCM/HN: 4-8 giờ. Tỉnh thành khác: 1-3 ngày. Miễn phí ship đơn trên 500k!';
     } else {
       reply = '🙂 Cảm ơn bạn đã liên hệ! Nhân viên tư vấn sẽ phản hồi trong vòng vài phút. Trong thời gian chờ, bạn có thể xem thêm sản phẩm tại mục "Sản phẩm" nhé!';
     }
@@ -116,7 +116,7 @@ class MockChatRepository implements ChatRepository {
     return MessageModel(
       id: _uuid.v4(),
       senderId: 'support',
-      senderName: 'KienCare Support',
+      senderName: 'LAPTOPHUB Support',
       text: reply,
       isRead: false,
       timestamp: DateTime.now(),
