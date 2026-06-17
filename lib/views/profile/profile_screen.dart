@@ -4,6 +4,7 @@ import '../../app/routes.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_strings.dart';
 import '../../viewmodels/auth_viewmodel.dart';
+import '../../providers/wishlist_provider.dart';
 
 /// User profile screen with account info, settings, and navigation links.
 class ProfileScreen extends StatelessWidget {
@@ -25,17 +26,19 @@ class ProfileScreen extends StatelessWidget {
         ],
       ),
       body: Consumer<AuthViewModel>(
-        builder: (_, authVM, __) {
+        builder: (context, authVM, __) {
           final user = authVM.currentUser;
           if (user == null) {
             return const Center(child: CircularProgressIndicator());
           }
 
+          final wishlistCount = context.watch<WishlistProvider>().totalWishlistItems;
+
           return SingleChildScrollView(
             child: Column(
               children: [
                 // Profile Header
-                _buildProfileHeader(context, user.name, user.email, isDark),
+                _buildProfileHeader(context, user.name, user.email, wishlistCount, isDark),
 
                 const SizedBox(height: 8),
 
@@ -86,6 +89,13 @@ class ProfileScreen extends StatelessWidget {
                       onTap: () => Navigator.pushNamed(
                           context, AppRoutes.notifications),
                     ),
+                    _MenuItem(
+                      icon: Icons.favorite_outline_rounded,
+                      iconColor: AppColors.error,
+                      label: 'Danh sách yêu thích',
+                      onTap: () => Navigator.pushNamed(
+                          context, AppRoutes.wishlist),
+                    ),
                   ],
                   isDark: isDark,
                 ),
@@ -133,7 +143,7 @@ class ProfileScreen extends StatelessWidget {
   }
 
   Widget _buildProfileHeader(
-      BuildContext context, String name, String email, bool isDark) {
+      BuildContext context, String name, String email, int wishlistCount, bool isDark) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
@@ -193,7 +203,10 @@ class ProfileScreen extends StatelessWidget {
             children: [
               _StatItem(value: '2', label: 'Đơn hàng'),
               Container(width: 1, height: 40, color: Colors.white30),
-              _StatItem(value: '5', label: 'Yêu thích'),
+              GestureDetector(
+                onTap: () => Navigator.pushNamed(context, AppRoutes.wishlist),
+                child: _StatItem(value: wishlistCount.toString(), label: 'Yêu thích'),
+              ),
               Container(width: 1, height: 40, color: Colors.white30),
               _StatItem(value: '0', label: 'Điểm tích lũy'),
             ],

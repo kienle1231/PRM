@@ -1,0 +1,132 @@
+import 'package:flutter/material.dart';
+import '../models/product_model.dart';
+import '../models/wishlist_model.dart';
+import '../services/wishlist_database_service.dart';
+
+/// State management provider for the wishlist feature.
+/// Caches items in memory and updates the local SQLite database.
+class WishlistProvider extends ChangeNotifier {
+  final WishlistDatabaseService _dbService = WishlistDatabaseService();
+
+  // In-memory cache of wishlist items
+  List<WishlistModel> _wishlistItems = [];
+
+  // Loading and error state flags
+  bool _isLoading = false;
+  String? _errorMessage;
+
+  // Default User ID (for demo/session purposes)
+  static const int _defaultUserId = 1;
+
+  /// Cached list of wishlist items.
+  List<WishlistModel> get wishlist => _wishlistItems;
+
+  /// Total count of favorited products.
+  int get totalWishlistItems => _wishlistItems.length;
+
+  /// Returns true if the provider is currently fetching database content.
+  bool get isLoading => _isLoading;
+
+  /// Returns error message if any database operation fails.
+  String? get errorMessage => _errorMessage;
+
+  /// Load wishlist from SQLite database into memory cache.
+  Future<void> loadWishlist({int userId = _defaultUserId}) async {
+    _isLoading = true;
+    _errorMessage = null;
+    // Don't call notifyListeners() here if we want to avoid extra rebuilds, 
+    // but doing so once is safe to show loading indicators.
+    notifyListeners();
+
+    try {
+      _wishlistItems = await _dbService.getWishlist(userId);
+      _errorMessage = null;
+    } catch (e) {
+      _errorMessage = 'Something went wrong. Please try again.';
+      debugPrint('[WishlistProvider] Error loading wishlist: $e');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// Add a product to the wishlist database and memory cache.
+  Future<void> addToWishlist(ProductModel product, {int userId = _defaultUserId}) async {
+    _errorMessage = null;
+    
+    // Check if already in wishlist in memory to avoid duplicate database writes
+    if (_wishlistItems.any((item) => item.productId == product.id)) {
+      return;
+    }
+
+    final newItem = WishlistModel.fromProduct(product, userId: userId);
+
+    // Optimistic UI Update: add to cache immediately for responsive feel
+    _wishlistItems.insert(0, newItem);
+    notifyListeners();
+
+    try {
+      await _dbService.insertWishlist(newItem);
+    } catch (e) {
+      // Rollback cache on database failure
+      _wishlistItems.removeWhere((item) => item.productId == product.id);
+      _errorMessage = 'Something went wrong. Please try again.';
+      debugPrint('[WishlistProvider] Error adding to wishlist: $e');
+      notifyListeners();
+    }
+  }
+
+  /// Remove a product from the wishlist database and memory cache.
+  Future<void> removeFromWishlist(String productId, {int userId = _defaultUserId}) async {
+    _errorMessage = null;
+
+    final index = _wishlistItems.indexWhere((item) => item.productId == productId);
+    if (index == -1) return;
+
+    // Save removed item for possible rollback
+    final removedItem = _wishlistItems[index];
+
+    // Optimistic UI Update: remove from cache immediately
+    _wishlistItems.removeAt(index);
+    notifyListeners();
+
+    try {
+      await _dbService.deleteWishlist(productId);
+    } catch (e) {
+      // Rollback cache on database failure
+      if (index <= _wishlistItems.length) {
+        _wishlistItems.insert(index, removedItem);
+      } else {
+        _wishlistItems.add(removedItem);
+      }
+      _errorMessage = 'Something went wrong. Please try again.';
+      debugPrint('[WishlistProvider] Error removing from wishlist: $e');
+      notifyListeners();
+    }
+  }
+
+  /// Synchronous favorite check against in-memory cache.
+  /// Extremely fast, safe to run directly in Widget build() methods without polling SQLite.
+  bool isFavorite(String productId) {
+    return _wishlistItems.any((item) => item.productId == productId);
+  }
+
+  /// Clear the entire wishlist database and memory cache.
+  Future<void> clearWishlist({int userId = _defaultUserId}) async {
+    _errorMessage = null;
+    final originalItems = List<WishlistModel>.from(_wishlistItems);
+
+    _wishlistItems.clear();
+    notifyListeners();
+
+    try {
+      await _dbService.clearWishlist(userId);
+    } catch (e) {
+      // Rollback cache on database failure
+      _wishlistItems = originalItems;
+      _errorMessage = 'Something went wrong. Please try again.';
+      debugPrint('[WishlistProvider] Error clearing wishlist: $e');
+      notifyListeners();
+    }
+  }
+}
