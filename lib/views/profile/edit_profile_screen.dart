@@ -17,10 +17,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameCtrl = TextEditingController();
   final _phoneCtrl = TextEditingController();
-  final _addressCtrl = TextEditingController();
-  final _provinceCtrl = TextEditingController();
-  final _districtCtrl = TextEditingController();
-  final _wardCtrl = TextEditingController();
 
   @override
   void initState() {
@@ -33,20 +29,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     if (user == null) return;
     _nameCtrl.text = user.name;
     _phoneCtrl.text = user.phone;
-    _addressCtrl.text = user.address ?? '';
-    _provinceCtrl.text = user.province ?? '';
-    _districtCtrl.text = user.district ?? '';
-    _wardCtrl.text = user.ward ?? '';
   }
 
   @override
   void dispose() {
     _nameCtrl.dispose();
     _phoneCtrl.dispose();
-    _addressCtrl.dispose();
-    _provinceCtrl.dispose();
-    _districtCtrl.dispose();
-    _wardCtrl.dispose();
     super.dispose();
   }
 
@@ -59,10 +47,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     final updatedUser = currentUser.copyWith(
       name: _nameCtrl.text.trim(),
       phone: _phoneCtrl.text.trim(),
-      address: _addressCtrl.text.trim(),
-      province: _provinceCtrl.text.trim(),
-      district: _districtCtrl.text.trim(),
-      ward: _wardCtrl.text.trim(),
     );
 
     final success = await authVM.updateProfile(updatedUser);
@@ -176,52 +160,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 controller: _phoneCtrl,
                 validator: AppValidators.phone,
                 keyboardType: TextInputType.phone,
-                textInputAction: TextInputAction.next,
                 decoration: const InputDecoration(
                   labelText: AppStrings.phone,
                   prefixIcon: Icon(Icons.phone_outlined),
-                ),
-              ),
-
-              const SizedBox(height: 24),
-
-              // Address
-              const _SectionLabel(label: 'Địa chỉ giao hàng'),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _addressCtrl,
-                textInputAction: TextInputAction.next,
-                decoration: const InputDecoration(
-                  labelText: 'Số nhà, tên đường',
-                  prefixIcon: Icon(Icons.home_outlined),
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _wardCtrl,
-                textInputAction: TextInputAction.next,
-                decoration: const InputDecoration(
-                  labelText: 'Phường / Xã',
-                  prefixIcon: Icon(Icons.location_on_outlined),
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _districtCtrl,
-                textInputAction: TextInputAction.next,
-                decoration: const InputDecoration(
-                  labelText: 'Quận / Huyện',
-                  prefixIcon: Icon(Icons.location_city_outlined),
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _provinceCtrl,
-                textInputAction: TextInputAction.done,
-                onFieldSubmitted: (_) => _save(),
-                decoration: const InputDecoration(
-                  labelText: 'Tỉnh / Thành phố',
-                  prefixIcon: Icon(Icons.map_outlined),
                 ),
               ),
 

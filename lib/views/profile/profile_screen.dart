@@ -82,6 +82,14 @@ class ProfileScreen extends StatelessWidget {
                       onTap: () => Navigator.pushNamed(
                           context, AppRoutes.editProfile),
                     ),
+                    if (user.role == 'admin')
+                      _MenuItem(
+                        icon: Icons.admin_panel_settings_outlined,
+                        iconColor: AppColors.primary,
+                        label: 'Quản lý đơn hàng (Admin)',
+                        onTap: () => Navigator.pushNamed(
+                            context, AppRoutes.adminOrders),
+                      ),
                     _MenuItem(
                       icon: Icons.notifications_outlined,
                       iconColor: AppColors.warning,

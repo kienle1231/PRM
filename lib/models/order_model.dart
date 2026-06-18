@@ -3,8 +3,10 @@ import 'cart_item_model.dart';
 /// Order status enum with display helpers.
 enum OrderStatus {
   pending,
+  paid,
   confirmed,
   shipping,
+  completed,
   delivered,
   cancelled;
 
@@ -12,10 +14,14 @@ enum OrderStatus {
     switch (this) {
       case OrderStatus.pending:
         return 'Chờ xác nhận';
+      case OrderStatus.paid:
+        return 'Đã thanh toán';
       case OrderStatus.confirmed:
         return 'Đã xác nhận';
       case OrderStatus.shipping:
         return 'Đang giao';
+      case OrderStatus.completed:
+        return 'Hoàn thành';
       case OrderStatus.delivered:
         return 'Đã giao';
       case OrderStatus.cancelled:
@@ -27,10 +33,14 @@ enum OrderStatus {
     switch (this) {
       case OrderStatus.pending:
         return '⏳';
+      case OrderStatus.paid:
+        return '💳';
       case OrderStatus.confirmed:
         return '✅';
       case OrderStatus.shipping:
         return '🚚';
+      case OrderStatus.completed:
+        return '🎉';
       case OrderStatus.delivered:
         return '📦';
       case OrderStatus.cancelled:

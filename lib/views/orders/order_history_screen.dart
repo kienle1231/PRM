@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../app/routes.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/utils/formatters.dart';
@@ -78,9 +79,12 @@ class _OrderCard extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final statusColor = _statusColor(order.status);
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
+    return InkWell(
+      onTap: () => Navigator.pushNamed(context, AppRoutes.orderDetail, arguments: order),
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
         color: isDark ? AppColors.cardDark : Colors.white,
         borderRadius: BorderRadius.circular(14),
         border: isDark
@@ -222,19 +226,50 @@ class _OrderCard extends StatelessWidget {
               ),
             ],
           ),
+          
+          // Action Buttons
+          if (_buildActionButtons(context) != null) ...[
+            const SizedBox(height: 16),
+            const Divider(height: 1),
+            const SizedBox(height: 12),
+            _buildActionButtons(context)!,
+          ],
         ],
       ),
-    );
+    ));
+  }
+
+  Widget? _buildActionButtons(BuildContext context) {
+    final vm = context.read<OrderViewModel>();
+
+    if (order.status == OrderStatus.shipping) {
+      return SizedBox(
+        width: double.infinity,
+        child: ElevatedButton(
+          onPressed: () => vm.updateOrderStatus(order.id, OrderStatus.completed),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.success,
+          ),
+          child: const Text('Đã nhận được hàng', style: TextStyle(fontWeight: FontWeight.w700)),
+        ),
+      );
+    }
+
+    return null;
   }
 
   Color _statusColor(OrderStatus status) {
     switch (status) {
       case OrderStatus.pending:
         return AppColors.warning;
+      case OrderStatus.paid:
+        return AppColors.accent;
       case OrderStatus.confirmed:
         return AppColors.primary;
       case OrderStatus.shipping:
         return AppColors.accent;
+      case OrderStatus.completed:
+        return AppColors.success;
       case OrderStatus.delivered:
         return AppColors.success;
       case OrderStatus.cancelled:

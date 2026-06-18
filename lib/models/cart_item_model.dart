@@ -6,6 +6,7 @@ class CartItemModel {
   final double originalPrice;
   final String imageUrl;
   int quantity;
+  final int stock; // Tồn kho — dùng để kiểm tra giới hạn số lượng
 
   CartItemModel({
     required this.productId,
@@ -14,6 +15,7 @@ class CartItemModel {
     required this.originalPrice,
     required this.imageUrl,
     required this.quantity,
+    required this.stock,
   });
 
   /// Subtotal for this line item at sale price.
@@ -38,6 +40,7 @@ class CartItemModel {
         'originalPrice': originalPrice,
         'imageUrl': imageUrl,
         'quantity': quantity,
+        'stock': stock,
       };
 
   factory CartItemModel.fromJson(Map<String, dynamic> json) => CartItemModel(
@@ -47,6 +50,7 @@ class CartItemModel {
         originalPrice: (json['originalPrice'] as num).toDouble(),
         imageUrl: json['imageUrl'] as String,
         quantity: json['quantity'] as int,
+        stock: json['stock'] as int? ?? 999,
       );
 
   CartItemModel copyWith({
@@ -56,6 +60,7 @@ class CartItemModel {
     double? originalPrice,
     String? imageUrl,
     int? quantity,
+    int? stock,
   }) =>
       CartItemModel(
         productId: productId ?? this.productId,
@@ -64,6 +69,7 @@ class CartItemModel {
         originalPrice: originalPrice ?? this.originalPrice,
         imageUrl: imageUrl ?? this.imageUrl,
         quantity: quantity ?? this.quantity,
+        stock: stock ?? this.stock,
       );
 
   @override

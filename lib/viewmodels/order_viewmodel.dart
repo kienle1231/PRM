@@ -4,9 +4,10 @@ import '../repositories/order_repository.dart';
 
 /// Manages order history state.
 class OrderViewModel extends ChangeNotifier {
-  final MockOrderRepository _repo;
+  final OrderRepository _repo;
 
   List<OrderModel> _orders = [];
+  List<OrderModel> _allOrders = []; // Dành cho Admin
   OrderModel? _selectedOrder;
   bool _isLoading = false;
   String? _error;
@@ -15,6 +16,7 @@ class OrderViewModel extends ChangeNotifier {
 
   // ── Getters ───────────────────────────────────────────────────────────────
   List<OrderModel> get orders => _orders;
+  List<OrderModel> get allOrders => _allOrders;
   OrderModel? get selectedOrder => _selectedOrder;
   bool get isLoading => _isLoading;
   String? get error => _error;
@@ -28,6 +30,21 @@ class OrderViewModel extends ChangeNotifier {
       _orders = await _repo.getOrders(userId);
     } catch (_) {
       _error = 'Không thể tải lịch sử đơn hàng';
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  // ── Fetch All Orders (Admin) ──────────────────────────────────────────────
+  Future<void> fetchAllOrders() async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+    try {
+      _allOrders = await _repo.getAllOrders();
+    } catch (_) {
+      _error = 'Không thể tải danh sách đơn hàng';
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -58,6 +75,30 @@ class OrderViewModel extends ChangeNotifier {
         _orders[idx] = _orders[idx].copyWith(status: OrderStatus.cancelled);
         notifyListeners();
       }
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  // ── Update Order Status ───────────────────────────────────────────────────
+  Future<bool> updateOrderStatus(String orderId, OrderStatus newStatus) async {
+    try {
+      await _repo.updateOrderStatus(orderId, newStatus);
+      
+      // Update in user list
+      final idx = _orders.indexWhere((o) => o.id == orderId);
+      if (idx >= 0) {
+        _orders[idx] = _orders[idx].copyWith(status: newStatus);
+      }
+      
+      // Update in admin list
+      final adminIdx = _allOrders.indexWhere((o) => o.id == orderId);
+      if (adminIdx >= 0) {
+        _allOrders[adminIdx] = _allOrders[adminIdx].copyWith(status: newStatus);
+      }
+      
+      notifyListeners();
       return true;
     } catch (_) {
       return false;
