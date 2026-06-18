@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import '../models/address_model.dart';
+import '../models/cart_item_model.dart';
+import '../models/order_model.dart';
 import '../views/splash/splash_screen.dart';
 import '../views/onboarding/onboarding_screen.dart';
 import '../views/auth/login_screen.dart';
@@ -9,8 +12,13 @@ import '../views/products/product_list_screen.dart';
 import '../views/products/product_detail_screen.dart';
 import '../views/cart/cart_screen.dart';
 import '../views/checkout/checkout_screen.dart';
+import '../views/checkout/payment_screen.dart';
 import '../views/checkout/order_confirmation_screen.dart';
+import '../views/address/address_selection_screen.dart';
+import '../views/address/address_form_screen.dart';
 import '../views/orders/order_history_screen.dart';
+import '../views/orders/order_detail_screen.dart';
+import '../views/admin/admin_orders_screen.dart';
 import '../views/notifications/notifications_screen.dart';
 import '../views/chat/chat_screen.dart';
 import '../views/profile/profile_screen.dart';
@@ -30,14 +38,19 @@ abstract class AppRoutes {
   static const String productDetail = '/product-detail';
   static const String cart = '/cart';
   static const String checkout = '/checkout';
+  static const String payment = '/payment';
   static const String orderConfirmation = '/order-confirmation';
   static const String orderHistory = '/orders';
+  static const String adminOrders = '/admin-orders';
   static const String notifications = '/notifications';
   static const String chat = '/chat';
   static const String profile = '/profile';
   static const String editProfile = '/edit-profile';
   static const String storeLocation = '/store-location';
   static const String wishlist = '/wishlist';
+  static const String addressSelection = '/address-selection';
+  static const String addressForm = '/address-form';
+  static const String orderDetail = '/order-detail';
 }
 
 /// Route generator — creates routes and passes arguments.
@@ -74,13 +87,32 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       page = const CartScreen();
       break;
     case AppRoutes.checkout:
-      page = const CheckoutScreen();
+      final items = settings.arguments as List<dynamic>?;
+      final singleItems = items?.cast<CartItemModel>();
+      page = CheckoutScreen(singleItems: singleItems);
+      break;
+    case AppRoutes.payment:
+      page = const PaymentScreen();
       break;
     case AppRoutes.orderConfirmation:
       page = const OrderConfirmationScreen();
       break;
+    case AppRoutes.addressSelection:
+      page = const AddressSelectionScreen();
+      break;
+    case AppRoutes.addressForm:
+      final address = settings.arguments as AddressModel?;
+      page = AddressFormScreen(address: address);
+      break;
     case AppRoutes.orderHistory:
       page = const OrderHistoryScreen();
+      break;
+    case AppRoutes.orderDetail:
+      final order = settings.arguments as OrderModel;
+      page = OrderDetailScreen(order: order);
+      break;
+    case AppRoutes.adminOrders:
+      page = const AdminOrdersScreen();
       break;
     case AppRoutes.notifications:
       page = const NotificationsScreen();

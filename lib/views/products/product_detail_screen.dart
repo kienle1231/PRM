@@ -9,6 +9,7 @@ import '../../core/utils/formatters.dart';
 import '../../models/product_model.dart';
 import '../../viewmodels/product_viewmodel.dart';
 import '../../viewmodels/cart_viewmodel.dart';
+import '../../models/cart_item_model.dart';
 import 'widgets/product_card.dart';
 import '../../widgets/favorite_button.dart';
 
@@ -46,6 +47,20 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
   }
 
   void _addToCart(ProductModel product, CartViewModel cartVM) {
+    final currentInCart = cartVM.quantityInCart(product.id);
+    if (currentInCart + _quantity > product.stock) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+              'Không thể thêm. Tồn kho: ${product.stock}, đã có $currentInCart trong giỏ'),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.all(12),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+      );
+      return;
+    }
     cartVM.addToCart(product, quantity: _quantity);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -446,21 +461,49 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
 
                   // Add to Cart
                   Expanded(
-                    child: ElevatedButton.icon(
+                    child: OutlinedButton.icon(
                       onPressed: product.inStock
                           ? () => _addToCart(product, cartVM)
                           : null,
-                      icon: const Icon(Icons.add_shopping_cart_rounded,
-                          size: 20),
+                      icon: const Icon(Icons.add_shopping_cart_rounded, size: 18),
                       label: Text(
-                        product.inStock
-                            ? AppStrings.addToCart
-                            : AppStrings.outOfStock,
-                        style: const TextStyle(
-                            fontWeight: FontWeight.w700, fontSize: 15),
+                        product.inStock ? 'Thêm giỏ' : 'Hết hàng',
+                        style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
                       ),
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size(0, 52),
+                        padding: EdgeInsets.zero,
+                        foregroundColor: AppColors.primary,
+                        side: const BorderSide(color: AppColors.primary),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+
+                  // Buy Now
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: product.inStock
+                          ? () {
+                              final singleItem = CartItemModel(
+                                productId: product.id,
+                                name: product.name,
+                                price: product.price.toDouble(),
+                                originalPrice: product.originalPrice.toDouble(),
+                                imageUrl: product.primaryImage,
+                                quantity: _quantity,
+                                stock: product.stock,
+                              );
+                              Navigator.pushNamed(context, AppRoutes.checkout, arguments: [singleItem]);
+                            }
+                          : null,
                       style: ElevatedButton.styleFrom(
                         minimumSize: const Size(0, 52),
+                        padding: EdgeInsets.zero,
+                      ),
+                      child: Text(
+                        product.inStock ? 'Mua ngay' : 'Hết hàng',
+                        style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: Colors.white),
                       ),
                     ),
                   ),

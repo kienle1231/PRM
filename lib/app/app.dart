@@ -31,7 +31,7 @@ class KienCareApp extends StatelessWidget {
     final authRepo = authRepository ?? MockAuthRepository();
     final productRepo = MockProductRepository();
     final cartRepo = SharedPrefsCartRepository();
-    final orderRepo = MockOrderRepository();
+    final orderRepo = SharedPrefsOrderRepository();
     final notifRepo = MockNotificationRepository();
     final chatRepo = MockChatRepository();
 

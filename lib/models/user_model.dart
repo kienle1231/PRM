@@ -1,3 +1,5 @@
+import 'address_model.dart';
+
 /// User model with copyWith for profile updates.
 class UserModel {
   final String id;
@@ -5,10 +7,8 @@ class UserModel {
   final String email;
   final String phone;
   final String? avatar;
-  final String? address;
-  final String? province;
-  final String? district;
-  final String? ward;
+  final List<AddressModel> addresses;
+  final String role; // 'user' hoặc 'admin'
   final DateTime createdAt;
 
   const UserModel({
@@ -17,10 +17,8 @@ class UserModel {
     required this.email,
     required this.phone,
     this.avatar,
-    this.address,
-    this.province,
-    this.district,
-    this.ward,
+    this.addresses = const [],
+    this.role = 'user',
     required this.createdAt,
   });
 
@@ -30,10 +28,8 @@ class UserModel {
     String? email,
     String? phone,
     String? avatar,
-    String? address,
-    String? province,
-    String? district,
-    String? ward,
+    List<AddressModel>? addresses,
+    String? role,
     DateTime? createdAt,
   }) =>
       UserModel(
@@ -42,10 +38,8 @@ class UserModel {
         email: email ?? this.email,
         phone: phone ?? this.phone,
         avatar: avatar ?? this.avatar,
-        address: address ?? this.address,
-        province: province ?? this.province,
-        district: district ?? this.district,
-        ward: ward ?? this.ward,
+        addresses: addresses ?? this.addresses,
+        role: role ?? this.role,
         createdAt: createdAt ?? this.createdAt,
       );
 
@@ -55,10 +49,8 @@ class UserModel {
         'email': email,
         'phone': phone,
         'avatar': avatar,
-        'address': address,
-        'province': province,
-        'district': district,
-        'ward': ward,
+        'addresses': addresses.map((a) => a.toJson()).toList(),
+        'role': role,
         'createdAt': createdAt.toIso8601String(),
       };
 
@@ -68,10 +60,11 @@ class UserModel {
         email: json['email'] as String,
         phone: json['phone'] as String? ?? '',
         avatar: json['avatar'] as String?,
-        address: json['address'] as String?,
-        province: json['province'] as String?,
-        district: json['district'] as String?,
-        ward: json['ward'] as String?,
+        addresses: (json['addresses'] as List<dynamic>?)
+                ?.map((e) => AddressModel.fromJson(e as Map<String, dynamic>))
+                .toList() ??
+            const [],
+        role: json['role'] as String? ?? 'user',
         createdAt: DateTime.parse(
             json['createdAt'] as String? ?? DateTime.now().toIso8601String()),
       );

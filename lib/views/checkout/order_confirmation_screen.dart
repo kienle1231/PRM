@@ -134,7 +134,9 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen>
                         _OrderInfoRow(
                           label: 'Trạng thái',
                           value: order.status.label,
-                          valueColor: AppColors.warning,
+                          valueColor: order.status == OrderStatus.paid
+                              ? AppColors.success
+                              : AppColors.warning,
                         ),
                       ],
                     ),
@@ -150,9 +152,8 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen>
                   child: ElevatedButton(
                     onPressed: () => Navigator.pushNamedAndRemoveUntil(
                       context,
-                      AppRoutes.main,
-                      (_) => false,
-                      arguments: 3, // Navigate to orders tab... or home
+                      AppRoutes.orderHistory,
+                      (route) => route.isFirst,
                     ),
                     child: const Text('Theo dõi đơn hàng',
                         style: TextStyle(

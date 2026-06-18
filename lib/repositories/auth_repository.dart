@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/user_model.dart';
+import '../models/address_model.dart';
 
 /// Authentication contract used by the app and test doubles.
 abstract class AuthRepository {
@@ -163,10 +164,7 @@ class FirebaseAuthRepository implements AuthRepository {
       email: user.email ?? storedProfile?.email ?? '',
       phone: storedProfile?.phone ?? user.phoneNumber ?? '',
       avatar: storedProfile?.avatar ?? user.photoURL,
-      address: storedProfile?.address,
-      province: storedProfile?.province,
-      district: storedProfile?.district,
-      ward: storedProfile?.ward,
+      addresses: storedProfile?.addresses ?? [],
       createdAt: user.metadata.creationTime ??
           storedProfile?.createdAt ??
           DateTime.now(),
@@ -218,6 +216,41 @@ class MockAuthRepository implements AuthRepository {
         name: 'Nguyễn Văn An',
         email: 'demo@kiencare.vn',
         phone: '0912345678',
+        addresses: [
+          AddressModel(
+            id: 'addr_1',
+            name: 'Nguyễn Văn An',
+            phone: '0912345678',
+            address: '123 Lê Lợi',
+            province: 'TP. Hồ Chí Minh',
+            district: 'Quận 1',
+            ward: 'Phường Bến Nghé',
+            isDefault: true,
+          )
+        ],
+        createdAt: DateTime(2024),
+      ),
+    },
+    'admin@kiencare.vn': {
+      'password': 'KienCare1',
+      'user': UserModel(
+        id: 'admin_demo',
+        name: 'Quản trị viên',
+        email: 'admin@kiencare.vn',
+        phone: '0988888888',
+        role: 'admin',
+        addresses: [
+          AddressModel(
+            id: 'addr_2',
+            name: 'Quản trị viên',
+            phone: '0988888888',
+            address: 'FPT University',
+            province: 'Đà Nẵng',
+            district: 'Ngũ Hành Sơn',
+            ward: 'Hòa Hải',
+            isDefault: true,
+          )
+        ],
         createdAt: DateTime(2024),
       ),
     },

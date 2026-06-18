@@ -50,14 +50,25 @@ class CartViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ── Add to Cart ───────────────────────────────────────────────────────────
+  // ── Add to Cart ─────────────────────────────────────────────────────────────────────
   Future<void> addToCart(ProductModel product, {int quantity = 1}) async {
     final idx = _items.indexWhere((i) => i.productId == product.id);
     if (idx >= 0) {
-      // Already in cart — increase quantity
-      _items[idx].quantity += quantity;
+      // Đã có trong giỏ — kiểm tra tồn kho trước khi tăng
+      final newQty = _items[idx].quantity + quantity;
+      if (newQty > product.stock) {
+        _message = 'Không thể thêm. Tồn kho chỉ còn ${product.stock}, đã có ${_items[idx].quantity} trong giỏ';
+        notifyListeners();
+        return;
+      }
+      _items[idx].quantity = newQty;
     } else {
-      // New item
+      // Sản phẩm mới — kiểm tra số lượng yêu cầu với tồn kho
+      if (quantity > product.stock) {
+        _message = 'Số lượng vượt quá tồn kho (còn ${product.stock})';
+        notifyListeners();
+        return;
+      }
       _items.add(CartItemModel(
         productId: product.id,
         name: product.name,
@@ -65,13 +76,14 @@ class CartViewModel extends ChangeNotifier {
         originalPrice: product.originalPrice.toDouble(),
         imageUrl: product.primaryImage,
         quantity: quantity,
+        stock: product.stock,
       ));
     }
     _message = '${product.name.length > 30 ? '${product.name.substring(0, 30)}...' : product.name} đã thêm vào giỏ';
     await _persist();
   }
 
-  // ── Update Quantity ───────────────────────────────────────────────────────
+  // ── Update Quantity ─────────────────────────────────────────────────────────────────
   Future<void> updateQuantity(String productId, int quantity) async {
     if (quantity <= 0) {
       await removeItem(productId);
@@ -79,7 +91,13 @@ class CartViewModel extends ChangeNotifier {
     }
     final idx = _items.indexWhere((i) => i.productId == productId);
     if (idx >= 0) {
-      _items[idx].quantity = quantity;
+      // Giới hạn không vượt quá tồn kho
+      if (quantity > _items[idx].stock) {
+        _items[idx].quantity = _items[idx].stock;
+        _message = 'Số lượng tối đa là ${_items[idx].stock}';
+      } else {
+        _items[idx].quantity = quantity;
+      }
       await _persist();
     }
   }
@@ -87,6 +105,12 @@ class CartViewModel extends ChangeNotifier {
   Future<void> increment(String productId) async {
     final idx = _items.indexWhere((i) => i.productId == productId);
     if (idx >= 0) {
+      // Kiểm tra tồn kho trước khi tăng
+      if (_items[idx].quantity >= _items[idx].stock) {
+        _message = 'Đã đạt số lượng tối đa trong kho (${_items[idx].stock})';
+        notifyListeners();
+        return;
+      }
       _items[idx].quantity++;
       await _persist();
     }

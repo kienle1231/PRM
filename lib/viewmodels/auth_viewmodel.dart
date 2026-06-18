@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user_model.dart';
+import '../models/address_model.dart';
 import '../repositories/auth_repository.dart';
 
 /// Auth state enumeration.
@@ -149,6 +150,52 @@ class AuthViewModel extends ChangeNotifier {
       notifyListeners();
       return false;
     }
+  }
+
+  // ── Manage Addresses ──────────────────────────────────────────────────────
+  Future<bool> addAddress(AddressModel newAddress) async {
+    if (_currentUser == null) return false;
+    
+    // Nếu đây là địa chỉ đầu tiên hoặc được set default, bỏ default các cái cũ
+    List<AddressModel> updatedList = List.from(_currentUser!.addresses);
+    bool isFirst = updatedList.isEmpty;
+    bool shouldBeDefault = newAddress.isDefault || isFirst;
+
+    if (shouldBeDefault) {
+      updatedList = updatedList.map((a) => a.copyWith(isDefault: false)).toList();
+    }
+    
+    final finalAddress = newAddress.copyWith(isDefault: shouldBeDefault);
+    updatedList.add(finalAddress);
+
+    return updateProfile(_currentUser!.copyWith(addresses: updatedList));
+  }
+
+  Future<bool> updateAddress(AddressModel updatedAddress) async {
+    if (_currentUser == null) return false;
+
+    List<AddressModel> updatedList = List.from(_currentUser!.addresses);
+    
+    if (updatedAddress.isDefault) {
+      updatedList = updatedList.map((a) => a.copyWith(isDefault: false)).toList();
+    }
+
+    final index = updatedList.indexWhere((a) => a.id == updatedAddress.id);
+    if (index >= 0) {
+      updatedList[index] = updatedAddress;
+      return updateProfile(_currentUser!.copyWith(addresses: updatedList));
+    }
+    return false;
+  }
+
+  Future<bool> setDefaultAddress(String addressId) async {
+    if (_currentUser == null) return false;
+
+    List<AddressModel> updatedList = _currentUser!.addresses.map((a) {
+      return a.copyWith(isDefault: a.id == addressId);
+    }).toList();
+
+    return updateProfile(_currentUser!.copyWith(addresses: updatedList));
   }
 
   // ── Remember Me ───────────────────────────────────────────────────────────

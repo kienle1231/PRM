@@ -86,6 +86,8 @@ abstract class AppStrings {
   static const String placeOrder = 'Xác nhận đặt hàng';
   static const String cod = 'Thanh toán khi nhận hàng (COD)';
   static const String bankTransfer = 'Chuyển khoản ngân hàng';
+  static const String momoPayment = 'Ví MoMo';
+  static const String vnpayPayment = 'VNPay';
 
   // ── Orders ────────────────────────────────────────────────────────────────
   static const String orderHistory = 'Lịch sử đơn hàng';

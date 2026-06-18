@@ -226,8 +226,11 @@ class _AddToCartButton extends StatelessWidget {
     return Consumer<CartViewModel>(
       builder: (_, cartVM, __) {
         final inCart = cartVM.isInCart(product.id);
+        final qtyInCart = cartVM.quantityInCart(product.id);
+        final atStockLimit = qtyInCart >= product.stock;
+        final canAdd = product.inStock && !atStockLimit;
         return GestureDetector(
-          onTap: product.inStock
+          onTap: canAdd
               ? () {
                   cartVM.addToCart(product);
                   ScaffoldMessenger.of(context).hideCurrentSnackBar();
@@ -243,19 +246,38 @@ class _AddToCartButton extends StatelessWidget {
                     ),
                   );
                 }
-              : null,
+              : (atStockLimit
+                  ? () {
+                      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Đã đạt tối đa ${product.stock} trong kho'),
+                          backgroundColor: AppColors.error,
+                          duration: const Duration(seconds: 2),
+                          behavior: SnackBarBehavior.floating,
+                          margin: const EdgeInsets.all(12),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8)),
+                        ),
+                      );
+                    }
+                  : null),
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 200),
             width: 32,
             height: 32,
             decoration: BoxDecoration(
-              color: product.inStock
-                  ? (inCart ? AppColors.success : AppColors.primary)
-                  : AppColors.textHint,
+              color: !product.inStock
+                  ? AppColors.textHint
+                  : atStockLimit
+                      ? AppColors.error.withValues(alpha: 0.7)
+                      : (inCart ? AppColors.success : AppColors.primary),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(
-              inCart ? Icons.check_rounded : Icons.add_shopping_cart_rounded,
+              atStockLimit
+                  ? Icons.block_rounded
+                  : (inCart ? Icons.check_rounded : Icons.add_shopping_cart_rounded),
               color: Colors.white,
               size: 16,
             ),

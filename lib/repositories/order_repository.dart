@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/order_model.dart';
 import '../models/cart_item_model.dart';
 import 'package:uuid/uuid.dart';
@@ -6,18 +8,49 @@ import 'package:uuid/uuid.dart';
 abstract class OrderRepository {
   Future<OrderModel> placeOrder(OrderModel order);
   Future<List<OrderModel>> getOrders(String userId);
+  Future<List<OrderModel>> getAllOrders();
   Future<OrderModel?> getOrderById(String orderId);
   Future<void> cancelOrder(String orderId);
+  Future<void> updateOrderStatus(String orderId, OrderStatus newStatus);
 }
 
-// ── Mock Implementation ────────────────────────────────────────────────────────
-class MockOrderRepository implements OrderRepository {
-  final List<OrderModel> _orders = [];
+// ── Shared Preferences Implementation ───────────────────────────────────────
+class SharedPrefsOrderRepository implements OrderRepository {
+  final String _prefKey = 'saved_orders_v1';
+  bool _isInitialized = false;
+  List<OrderModel> _orders = [];
 
-  MockOrderRepository() {
-    // Seed with sample order history
+  SharedPrefsOrderRepository();
+
+  Future<void> _init() async {
+    if (_isInitialized) return;
+    
+    final prefs = await SharedPreferences.getInstance();
+    final data = prefs.getString(_prefKey);
+    
+    if (data != null && data.isNotEmpty) {
+      try {
+        final List<dynamic> jsonList = jsonDecode(data);
+        _orders = jsonList.map((e) => OrderModel.fromJson(e)).toList();
+      } catch (e) {
+        _orders = _getInitialMockData();
+      }
+    } else {
+      _orders = _getInitialMockData();
+    }
+    
+    _isInitialized = true;
+  }
+
+  Future<void> _persist() async {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonList = _orders.map((e) => e.toJson()).toList();
+    await prefs.setString(_prefKey, jsonEncode(jsonList));
+  }
+
+  List<OrderModel> _getInitialMockData() {
     final now = DateTime.now();
-    _orders.addAll([
+    return [
       OrderModel(
         id: 'TC20240001',
         userId: 'user_demo',
@@ -29,6 +62,7 @@ class MockOrderRepository implements OrderRepository {
             originalPrice: 14999000,
             imageUrl: 'https://placehold.co/400x300/1a1b2e/0052CC?text=ASUS+VivoBook+15',
             quantity: 1,
+            stock: 10,
           ),
         ],
         subtotal: 12500000,
@@ -53,6 +87,7 @@ class MockOrderRepository implements OrderRepository {
             originalPrice: 4690000,
             imageUrl: 'https://placehold.co/400x300/1a1b2e/ffffff?text=Logitech+G915',
             quantity: 1,
+            stock: 10,
           ),
           CartItemModel(
             productId: 'acc002',
@@ -61,6 +96,7 @@ class MockOrderRepository implements OrderRepository {
             originalPrice: 2290000,
             imageUrl: 'https://placehold.co/400x300/1a1b2e/ffffff?text=Logitech+G+Pro+X',
             quantity: 1,
+            stock: 10,
           ),
         ],
         subtotal: 5780000,
@@ -73,35 +109,41 @@ class MockOrderRepository implements OrderRepository {
         paymentMethod: 'Bank Transfer',
         createdAt: now.subtract(const Duration(days: 3)),
       ),
-    ]);
+    ];
   }
 
   @override
   Future<OrderModel> placeOrder(OrderModel order) async {
-    await Future.delayed(const Duration(milliseconds: 800));
+    await _init();
+    await Future.delayed(const Duration(milliseconds: 500));
     final newOrder = order.copyWith(
       id: 'TC${DateTime.now().millisecondsSinceEpoch.toString().substring(5)}',
       status: OrderStatus.pending,
       createdAt: DateTime.now(),
     );
     _orders.insert(0, newOrder);
-
-    // TODO: Firebase — Save to Firestore
-    // await FirebaseFirestore.instance.collection('orders').doc(newOrder.id).set(newOrder.toJson());
-
+    await _persist();
     return newOrder;
   }
 
   @override
   Future<List<OrderModel>> getOrders(String userId) async {
-    await Future.delayed(const Duration(milliseconds: 400));
+    await _init();
+    await Future.delayed(const Duration(milliseconds: 300));
     return _orders.where((o) => o.userId == userId).toList()
       ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
   }
 
   @override
+  Future<List<OrderModel>> getAllOrders() async {
+    await _init();
+    await Future.delayed(const Duration(milliseconds: 300));
+    return List.from(_orders)..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+  }
+
+  @override
   Future<OrderModel?> getOrderById(String orderId) async {
-    await Future.delayed(const Duration(milliseconds: 200));
+    await _init();
     try {
       return _orders.firstWhere((o) => o.id == orderId);
     } catch (_) {
@@ -111,17 +153,27 @@ class MockOrderRepository implements OrderRepository {
 
   @override
   Future<void> cancelOrder(String orderId) async {
-    await Future.delayed(const Duration(milliseconds: 400));
+    await _init();
     final idx = _orders.indexWhere((o) => o.id == orderId);
     if (idx >= 0) {
       _orders[idx] = _orders[idx].copyWith(
         status: OrderStatus.cancelled,
         updatedAt: DateTime.now(),
       );
+      await _persist();
     }
+  }
 
-    // TODO: Firebase
-    // await FirebaseFirestore.instance.collection('orders').doc(orderId)
-    //     .update({'status': 'cancelled', 'updatedAt': DateTime.now().toIso8601String()});
+  @override
+  Future<void> updateOrderStatus(String orderId, OrderStatus newStatus) async {
+    await _init();
+    final idx = _orders.indexWhere((o) => o.id == orderId);
+    if (idx >= 0) {
+      _orders[idx] = _orders[idx].copyWith(
+        status: newStatus,
+        updatedAt: DateTime.now(),
+      );
+      await _persist();
+    }
   }
 }

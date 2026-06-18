@@ -20,6 +20,26 @@ class CartItemTile extends StatelessWidget {
     return Dismissible(
       key: Key(item.productId),
       direction: DismissDirection.endToStart,
+      confirmDismiss: (_) async {
+        return await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('Xóa sản phẩm'),
+            content: Text('Bạn có chắc muốn xóa "${item.name}" khỏi giỏ hàng?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('Hủy'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+                child: const Text('Xóa'),
+              ),
+            ],
+          ),
+        ) ?? false;
+      },
       onDismissed: (_) => cartVM.removeItem(item.productId),
       background: Container(
         decoration: BoxDecoration(
@@ -115,6 +135,19 @@ class CartItemTile extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
 
+                  // Stock info
+                  Text(
+                    'Kho: ${item.stock}',
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: item.quantity >= item.stock
+                          ? AppColors.error
+                          : (isDark ? Colors.white38 : AppColors.textHint),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+
                   // Quantity controls
                   Row(
                     children: [
@@ -131,36 +164,41 @@ class CartItemTile extends StatelessWidget {
 
                       // Qty controls
                       Consumer<CartViewModel>(
-                        builder: (_, vm, __) => Row(
-                          children: [
-                            _QtyBtn(
-                              icon: Icons.remove,
-                              onTap: () => vm.decrement(item.productId),
-                            ),
-                            Container(
-                              width: 36,
-                              height: 28,
-                              alignment: Alignment.center,
-                              decoration: BoxDecoration(
-                                color: isDark
-                                    ? AppColors.backgroundDark
-                                    : AppColors.backgroundLight,
-                                borderRadius: BorderRadius.circular(6),
+                        builder: (_, vm, __) {
+                          final atMax = item.quantity >= item.stock;
+                          return Row(
+                            children: [
+                              _QtyBtn(
+                                icon: Icons.remove,
+                                onTap: () => vm.decrement(item.productId),
                               ),
-                              child: Text(
-                                '${item.quantity}',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 13,
+                              Container(
+                                width: 36,
+                                height: 28,
+                                alignment: Alignment.center,
+                                decoration: BoxDecoration(
+                                  color: isDark
+                                      ? AppColors.backgroundDark
+                                      : AppColors.backgroundLight,
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(
+                                  '${item.quantity}',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 13,
+                                  ),
                                 ),
                               ),
-                            ),
-                            _QtyBtn(
-                              icon: Icons.add,
-                              onTap: () => vm.increment(item.productId),
-                            ),
-                          ],
-                        ),
+                              _QtyBtn(
+                                icon: Icons.add,
+                                onTap: atMax
+                                    ? null
+                                    : () => vm.increment(item.productId),
+                              ),
+                            ],
+                          );
+                        },
                       ),
                     ],
                   ),
@@ -176,23 +214,32 @@ class CartItemTile extends StatelessWidget {
 
 class _QtyBtn extends StatelessWidget {
   final IconData icon;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   const _QtyBtn({required this.icon, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
+    final enabled = onTap != null;
     return GestureDetector(
       onTap: onTap,
       child: Container(
         width: 28,
         height: 28,
         decoration: BoxDecoration(
-          color: AppColors.primarySurface,
+          color: enabled ? AppColors.primarySurface : Colors.grey.shade200,
           borderRadius: BorderRadius.circular(6),
-          border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+          border: Border.all(
+            color: enabled
+                ? AppColors.primary.withValues(alpha: 0.3)
+                : Colors.grey.shade300,
+          ),
         ),
-        child: Icon(icon, size: 16, color: AppColors.primary),
+        child: Icon(
+          icon,
+          size: 16,
+          color: enabled ? AppColors.primary : AppColors.textHint,
+        ),
       ),
     );
   }
