@@ -16,6 +16,7 @@ import '../views/chat/chat_screen.dart';
 import '../views/profile/profile_screen.dart';
 import '../views/profile/edit_profile_screen.dart';
 import '../views/store_location/store_location_screen.dart';
+import '../views/wishlist/wishlist_screen.dart';
 
 /// Centralized route definitions and named route generator.
 abstract class AppRoutes {
@@ -36,6 +37,7 @@ abstract class AppRoutes {
   static const String profile = '/profile';
   static const String editProfile = '/edit-profile';
   static const String storeLocation = '/store-location';
+  static const String wishlist = '/wishlist';
 }
 
 /// Route generator — creates routes and passes arguments.
@@ -59,7 +61,8 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       page = const ForgotPasswordScreen();
       break;
     case AppRoutes.main:
-      page = const MainShell();
+      final initialIndex = settings.arguments as int? ?? 0;
+      page = MainShell(initialIndex: initialIndex);
       break;
     case AppRoutes.productList:
       page = const ProductListScreen();
@@ -93,6 +96,9 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       break;
     case AppRoutes.storeLocation:
       page = const StoreLocationScreen();
+      break;
+    case AppRoutes.wishlist:
+      page = const WishlistScreen();
       break;
     default:
       page = const SplashScreen();

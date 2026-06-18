@@ -10,6 +10,7 @@ import '../viewmodels/checkout_viewmodel.dart';
 import '../viewmodels/order_viewmodel.dart';
 import '../viewmodels/notification_viewmodel.dart';
 import '../viewmodels/chat_viewmodel.dart';
+import '../providers/wishlist_provider.dart';
 import '../repositories/auth_repository.dart';
 import '../repositories/product_repository.dart';
 import '../repositories/cart_repository.dart';
@@ -56,6 +57,9 @@ class KienCareApp extends StatelessWidget {
         ),
         ChangeNotifierProvider(
           create: (_) => ChatViewModel(chatRepo),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => WishlistProvider()..loadWishlist(),
         ),
       ],
       child: const _AppView(),

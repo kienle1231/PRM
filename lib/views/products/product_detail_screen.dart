@@ -10,6 +10,7 @@ import '../../models/product_model.dart';
 import '../../viewmodels/product_viewmodel.dart';
 import '../../viewmodels/cart_viewmodel.dart';
 import 'widgets/product_card.dart';
+import '../../widgets/favorite_button.dart';
 
 /// Product detail screen with image gallery, specs, add-to-cart.
 class ProductDetailScreen extends StatefulWidget {
@@ -144,6 +145,11 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                   ),
                 ),
                 actions: [
+                  FavoriteButton(
+                    product: product,
+                    isFloating: false,
+                    iconSize: 24,
+                  ),
                   Consumer<CartViewModel>(
                     builder: (_, cartVM, __) => IconButton(
                       icon: Stack(

@@ -6,6 +6,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../models/product_model.dart';
 import '../../../viewmodels/cart_viewmodel.dart';
+import '../../../../widgets/favorite_button.dart';
 
 /// Product card for grid and list displays.
 class ProductCard extends StatelessWidget {
@@ -182,10 +183,17 @@ class _ProductImage extends StatelessWidget {
             ),
           ),
 
-        // Hot deal badge
+        // Favorite button
+        Positioned(
+          top: 8,
+          right: 8,
+          child: FavoriteButton(product: product),
+        ),
+
+        // Hot deal badge (shifted down to avoid overlap with Favorite button)
         if (product.isHotDeal)
           Positioned(
-            top: 8,
+            top: 48,
             right: 8,
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
