@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../app/routes.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/utils/formatters.dart';
@@ -43,7 +44,10 @@ class NotificationsScreen extends StatelessWidget {
             separatorBuilder: (_, __) => const SizedBox(height: 10),
             itemBuilder: (_, i) => _NotifTile(
               notification: vm.notifications[i],
-              onTap: () => vm.markAsRead(vm.notifications[i].id),
+              onTap: () {
+                vm.markAsRead(vm.notifications[i].id);
+                _navigateFromNotification(context, vm.notifications[i]);
+              },
             ),
           );
         },
@@ -64,6 +68,35 @@ class NotificationsScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  /// Điều hướng dựa trên type và route của thông báo.
+  static void _navigateFromNotification(
+      BuildContext context, NotificationModel n) {
+    switch (n.type) {
+      case NotificationType.order:
+        Navigator.pushNamed(context, AppRoutes.orderHistory);
+        break;
+      case NotificationType.promotion:
+        if (n.routeParam != null && n.routeParam!.isNotEmpty) {
+          Navigator.pushNamed(
+            context,
+            AppRoutes.productDetail,
+            arguments: n.routeParam,
+          );
+        } else {
+          Navigator.pushNamed(context, AppRoutes.productList);
+        }
+        break;
+      case NotificationType.system:
+        if (n.route == '/cart') {
+          Navigator.pushNamed(context, AppRoutes.cart);
+        }
+        break;
+      case NotificationType.news:
+        // Tin tức: không điều hướng thêm, chỉ đánh dấu đã đọc
+        break;
+    }
   }
 }
 
