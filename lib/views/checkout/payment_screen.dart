@@ -3,9 +3,7 @@ import 'package:provider/provider.dart';
 import '../../app/routes.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/utils/formatters.dart';
-import '../../viewmodels/auth_viewmodel.dart';
-import '../../viewmodels/cart_viewmodel.dart';
-import '../../viewmodels/checkout_viewmodel.dart';
+import '../../models/order_model.dart';
 import '../../viewmodels/order_viewmodel.dart';
 
 class PaymentScreen extends StatefulWidget {
@@ -18,7 +16,7 @@ class PaymentScreen extends StatefulWidget {
 class _PaymentScreenState extends State<PaymentScreen> {
   bool _isProcessing = false;
 
-  Future<void> _processPayment() async {
+  Future<void> _processPayment(OrderModel order) async {
     setState(() => _isProcessing = true);
     
     // Giả lập thời gian xử lý giao dịch mạng 1.5s
@@ -26,40 +24,18 @@ class _PaymentScreenState extends State<PaymentScreen> {
     
     if (!mounted) return;
     
-    final authVM = context.read<AuthViewModel>();
-    final cartVM = context.read<CartViewModel>();
-    final checkoutVM = context.read<CheckoutViewModel>();
     final orderVM = context.read<OrderViewModel>();
-
-    final order = await checkoutVM.placeOrder(
-      userId: authVM.currentUser?.id ?? 'guest',
-      cartItems: cartVM.items,
-      subtotal: cartVM.subtotal,
-      shippingFee: cartVM.shippingFee,
-    );
+    await orderVM.updateOrderStatus(order.id, OrderStatus.paid);
 
     if (!mounted) return;
 
     setState(() => _isProcessing = false);
 
-    if (order != null) {
-      orderVM.addOrder(order);
-      await cartVM.clearCart();
-      if (!mounted) return;
-      Navigator.pushNamedAndRemoveUntil(
-        context,
-        AppRoutes.orderConfirmation,
-        (route) => route.settings.name == AppRoutes.main, // Xóa hết stack trừ Main (Home)
-        arguments: order,
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(checkoutVM.error ?? 'Đặt hàng thất bại'),
-          backgroundColor: AppColors.error,
-        ),
-      );
-    }
+    Navigator.pushReplacementNamed(
+      context,
+      AppRoutes.orderConfirmation,
+      arguments: order,
+    );
   }
 
   void _cancelPayment() {
@@ -92,10 +68,13 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final method = ModalRoute.of(context)?.settings.arguments as String?;
-    final cartVM = context.watch<CartViewModel>();
+    final order = ModalRoute.of(context)?.settings.arguments as OrderModel?;
     
-    final isMomo = method == 'Momo';
+    if (order == null) {
+      return const Scaffold(body: Center(child: Text('Lỗi: Không tìm thấy đơn hàng')));
+    }
+
+    final isMomo = order.paymentMethod == 'Momo';
     final methodName = isMomo ? 'MoMo' : 'VNPay';
     final methodColor = isMomo ? const Color(0xFFAE2070) : const Color(0xFF005BAA);
 
@@ -146,7 +125,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                   children: [
                     // Fake QR Matrix
                     Image.network(
-                      'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=MockPayment$methodName${cartVM.total}',
+                      'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=MockPayment$methodName${order.total}',
                       fit: BoxFit.cover,
                     ),
                     // Center Logo
@@ -170,6 +149,39 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 ),
               ),
               const SizedBox(height: 32),
+
+              // Mock Transfer Info
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: isMomo ? const Color(0xFFFBEBF3) : const Color(0xFFE6F3FB),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: methodColor.withValues(alpha: 0.3)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.info_outline, color: methodColor, size: 20),
+                        const SizedBox(width: 8),
+                        Text('Thông tin chuyển khoản', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: methodColor)),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    _buildInfoRow('Chủ tài khoản:', 'CÔNG TY TNHH LAPTOP HUB'),
+                    const SizedBox(height: 8),
+                    _buildInfoRow('Số tài khoản:', '19039999999999'),
+                    const SizedBox(height: 8),
+                    _buildInfoRow('Ngân hàng/Ví:', isMomo ? 'Ví MoMo' : 'Techcombank'),
+                    const SizedBox(height: 8),
+                    _buildInfoRow('Số tiền:', AppFormatters.vnd(order.total), isHighlight: true, highlightColor: methodColor),
+                    const SizedBox(height: 8),
+                    _buildInfoRow('Nội dung:', 'Thanh toan don hang ${order.id}', isHighlight: true, highlightColor: AppColors.error),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 32),
               
               // Total amount
               const Text(
@@ -178,7 +190,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                AppFormatters.vnd(cartVM.total),
+                AppFormatters.vnd(order.total),
                 style: TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.w900,
@@ -192,7 +204,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 width: double.infinity,
                 height: 54,
                 child: ElevatedButton(
-                  onPressed: _isProcessing ? null : _processPayment,
+                  onPressed: _isProcessing ? null : () => _processPayment(order),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: methodColor,
                     shape: RoundedRectangleBorder(
@@ -234,6 +246,28 @@ class _PaymentScreenState extends State<PaymentScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildInfoRow(String label, String value, {bool isHighlight = false, Color highlightColor = AppColors.primary}) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 100,
+          child: Text(label, style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+        ),
+        Expanded(
+          child: Text(
+            value,
+            style: TextStyle(
+              fontWeight: isHighlight ? FontWeight.bold : FontWeight.w600,
+              color: isHighlight ? highlightColor : AppColors.textPrimary,
+              fontSize: 14,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

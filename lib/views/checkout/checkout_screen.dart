@@ -74,18 +74,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       return;
     }
 
-    final isOnlinePayment =
-        checkoutVM.paymentMethod == 'Momo' || checkoutVM.paymentMethod == 'VNPay';
-
-    if (isOnlinePayment) {
-      Navigator.pushNamed(
-        context,
-        AppRoutes.payment,
-        arguments: checkoutVM.paymentMethod,
-      );
-      return;
-    }
-
     final authVM = context.read<AuthViewModel>();
     final cartVM = context.read<CartViewModel>();
     final orderVM = context.read<OrderViewModel>();
@@ -104,12 +92,25 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       if (widget.singleItems == null) {
         await cartVM.clearCart();
       }
+
       if (!mounted) return;
-      Navigator.pushReplacementNamed(
-        context,
-        AppRoutes.orderConfirmation,
-        arguments: order,
-      );
+
+      final isOnlinePayment =
+          checkoutVM.paymentMethod == 'Momo' || checkoutVM.paymentMethod == 'VNPay';
+
+      if (isOnlinePayment) {
+        Navigator.pushReplacementNamed(
+          context,
+          AppRoutes.payment,
+          arguments: order,
+        );
+      } else {
+        Navigator.pushReplacementNamed(
+          context,
+          AppRoutes.orderConfirmation,
+          arguments: order,
+        );
+      }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
