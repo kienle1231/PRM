@@ -98,7 +98,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen>
                 ),
                 const SizedBox(height: 12),
                 const Text(
-                  'Cảm ơn bạn đã tin tưởng KienCare!\nChúng tôi sẽ liên hệ xác nhận trong thời gian sớm nhất.',
+                  'Cảm ơn bạn đã tin tưởng Laptop Hub!\nChúng tôi sẽ liên hệ xác nhận trong thời gian sớm nhất.',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 14,

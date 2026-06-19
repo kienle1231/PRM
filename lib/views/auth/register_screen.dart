@@ -98,7 +98,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                'Điền thông tin để bắt đầu mua sắm tại KienCare',
+                'Điền thông tin để bắt đầu mua sắm tại Laptop Hub',
                 style: TextStyle(
                   fontSize: 14,
                   color: isDark ? Colors.white60 : AppColors.textSecondary,
