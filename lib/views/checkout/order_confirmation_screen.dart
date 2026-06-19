@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../app/routes.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/utils/formatters.dart';
 import '../../models/order_model.dart';
+import '../../viewmodels/notification_viewmodel.dart';
 
 /// Order confirmation screen shown after successful order placement.
 class OrderConfirmationScreen extends StatefulWidget {
@@ -29,6 +31,21 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen>
     );
     _fadeAnim = CurvedAnimation(parent: _controller, curve: Curves.easeIn);
     _controller.forward();
+
+    // Trigger thông báo xác nhận đơn hàng sau 2 giây (giả lập hệ thống gửi push notification)
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final order =
+          ModalRoute.of(context)?.settings.arguments as OrderModel?;
+      if (order != null) {
+        Future.delayed(const Duration(seconds: 2), () {
+          if (!mounted) return;
+          context.read<NotificationViewModel>().addOrderNotification(
+                orderId: order.id,
+                orderDisplayId: AppFormatters.orderId(order.id),
+              );
+        });
+      }
+    });
   }
 
   @override

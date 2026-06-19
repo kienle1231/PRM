@@ -6,9 +6,12 @@ import '../../core/constants/app_strings.dart';
 import '../../viewmodels/product_viewmodel.dart';
 import '../../viewmodels/auth_viewmodel.dart';
 import '../../viewmodels/cart_viewmodel.dart';
+import '../../viewmodels/notification_viewmodel.dart';
+import '../../providers/wishlist_provider.dart';
 import 'widgets/banner_carousel.dart';
 import 'widgets/category_row.dart';
 import 'widgets/product_section.dart';
+import 'widgets/promotion_section.dart';
 
 /// Home tab — main landing page with search, banners, categories, featured products.
 class HomeScreen extends StatefulWidget {
@@ -20,13 +23,34 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController _searchCtrl = TextEditingController();
+  bool _flashSaleNotifSent = false; // Chỉ gửi 1 lần mỗi session
 
   @override
   void initState() {
     super.initState();
-    // Load home data after first frame
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<ProductViewModel>().loadHomeData();
+    // Load home data sau frame đầu tiên, sau đó trigger thông báo flash sale
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final productVM = context.read<ProductViewModel>();
+      await productVM.loadHomeData();
+
+      // Trigger thông báo khuyến mãi tự động sau 3 giây nếu chưa gửi trong session này
+      if (!_flashSaleNotifSent && productVM.hotDeals.isNotEmpty && mounted) {
+        _flashSaleNotifSent = true;
+        // Lấy sản phẩm có discount cao nhất trong hot deals
+        final topDeal = productVM.hotDeals.reduce(
+          (a, b) => a.discountPercent >= b.discountPercent ? a : b,
+        );
+        Future.delayed(const Duration(seconds: 3), () {
+          if (!mounted) return;
+          context.read<NotificationViewModel>().addFlashSaleNotification(
+                productId: topDeal.id,
+                productName: topDeal.name.length > 30
+                    ? '${topDeal.name.substring(0, 30)}...'
+                    : topDeal.name,
+                discountPercent: topDeal.discountPercent,
+              );
+        });
+      }
     });
   }
 
@@ -66,6 +90,10 @@ class _HomeScreenState extends State<HomeScreen> {
                       children: [
                         // Banner Carousel
                         const BannerCarousel(),
+                        const SizedBox(height: 20),
+
+                        // Promotion Section — Chương trình khuyến mãi
+                        const PromotionSection(),
                         const SizedBox(height: 24),
 
                         // Categories
@@ -140,7 +168,49 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
 
-          // Cart button
+          // Nút Yêu thích (Wishlist) với badge
+          Consumer<WishlistProvider>(
+            builder: (_, wishlistVM, __) => Stack(
+              clipBehavior: Clip.none,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.favorite_border_rounded),
+                  color: wishlistVM.totalWishlistItems > 0
+                      ? AppColors.secondary
+                      : null,
+                  onPressed: () =>
+                      Navigator.pushNamed(context, AppRoutes.wishlist),
+                ),
+                if (wishlistVM.totalWishlistItems > 0)
+                  Positioned(
+                    top: 2,
+                    right: 2,
+                    child: Container(
+                      width: 18,
+                      height: 18,
+                      decoration: const BoxDecoration(
+                        color: AppColors.secondary,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Center(
+                        child: Text(
+                          wishlistVM.totalWishlistItems > 9
+                              ? '9+'
+                              : wishlistVM.totalWishlistItems.toString(),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+
+          // Nút giỏ hàng với badge
           Consumer<CartViewModel>(
             builder: (_, cartVM, __) => Stack(
               clipBehavior: Clip.none,
@@ -230,62 +300,65 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildHotDealsBanner(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-      height: 70,
-      decoration: BoxDecoration(
-        gradient: AppColors.hotDealGradient,
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.secondary.withValues(alpha: 0.3),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          const SizedBox(width: 20),
-          const Text('🔥', style: TextStyle(fontSize: 28)),
-          const SizedBox(width: 12),
-          const Expanded(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('FLASH SALE',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w900,
-                      fontSize: 16,
-                      letterSpacing: 1,
-                    )),
-                Text('Giảm đến 50% mỗi ngày!',
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 12,
-                    )),
-              ],
+    return GestureDetector(
+      onTap: () => Navigator.pushNamed(context, AppRoutes.productList),
+      child: Container(
+        margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        height: 70,
+        decoration: BoxDecoration(
+          gradient: AppColors.hotDealGradient,
+          borderRadius: BorderRadius.circular(14),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.secondary.withValues(alpha: 0.3),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
             ),
-          ),
-          Container(
-            margin: const EdgeInsets.only(right: 16),
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: const Text(
-              'Xem ngay',
-              style: TextStyle(
-                color: AppColors.secondary,
-                fontWeight: FontWeight.w700,
-                fontSize: 12,
+          ],
+        ),
+        child: Row(
+          children: [
+            const SizedBox(width: 20),
+            const Text('🔥', style: TextStyle(fontSize: 28)),
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('FLASH SALE',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 16,
+                        letterSpacing: 1,
+                      )),
+                  Text('Giảm đến 50% mỗi ngày!',
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontSize: 12,
+                      )),
+                ],
               ),
             ),
-          ),
-        ],
+            Container(
+              margin: const EdgeInsets.only(right: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Text(
+                'Xem ngay',
+                style: TextStyle(
+                  color: AppColors.secondary,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 12,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

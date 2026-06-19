@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import '../../../app/routes.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_images.dart';
 
@@ -10,12 +11,16 @@ class _BannerItem {
   final String title;
   final String subtitle;
   final Color overlayColor;
+  final String route;
+  final Object? routeArgs;
 
   const _BannerItem({
     required this.imageUrl,
     required this.title,
     required this.subtitle,
     required this.overlayColor,
+    required this.route,
+    this.routeArgs,
   });
 }
 
@@ -37,18 +42,21 @@ class _BannerCarouselState extends State<BannerCarousel> {
       title: 'Sale 10.10',
       subtitle: 'Giảm đến 50% tất cả laptop',
       overlayColor: AppColors.primary,
+      route: AppRoutes.productList,
     ),
     _BannerItem(
       imageUrl: AppImages.banner2,
       title: 'Gaming Gear HOT',
       subtitle: 'Bàn phím, chuột, tai nghe giảm sốc',
       overlayColor: AppColors.secondary,
+      route: AppRoutes.productList,
     ),
     _BannerItem(
       imageUrl: AppImages.banner3,
       title: 'Laptop Mới Về',
       subtitle: 'MacBook, ASUS ROG, Dell XPS',
       overlayColor: AppColors.accent,
+      route: AppRoutes.productList,
     ),
   ];
 
@@ -59,7 +67,7 @@ class _BannerCarouselState extends State<BannerCarousel> {
         CarouselSlider.builder(
           carouselController: _controller,
           itemCount: _banners.length,
-          itemBuilder: (_, i, __) => _buildBannerCard(_banners[i]),
+          itemBuilder: (_, i, __) => _buildBannerCard(context, _banners[i]),
           options: CarouselOptions(
             height: 160,
             viewportFraction: 0.92,
@@ -89,7 +97,7 @@ class _BannerCarouselState extends State<BannerCarousel> {
     );
   }
 
-  Widget _buildBannerCard(_BannerItem banner) {
+  Widget _buildBannerCard(BuildContext context, _BannerItem banner) {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 4),
       decoration: BoxDecoration(
@@ -181,6 +189,20 @@ class _BannerCarouselState extends State<BannerCarousel> {
                     ),
                   ),
                 ],
+              ),
+            ),
+            // Ripple + tap layer (trên cùng)
+            Positioned.fill(
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(16),
+                  onTap: () => Navigator.pushNamed(
+                    context,
+                    banner.route,
+                    arguments: banner.routeArgs,
+                  ),
+                ),
               ),
             ),
           ],
