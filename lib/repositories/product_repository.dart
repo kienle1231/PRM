@@ -18,6 +18,12 @@ abstract class ProductRepository {
   Future<List<ProductModel>> getFeaturedProducts();
   Future<List<ProductModel>> getHotDeals();
   Future<List<ProductModel>> getRelatedProducts(String productId, String categoryId);
+
+  // ── Admin CRUD ────────────────────────────────────────────────────────────
+  Future<List<ProductModel>> getAllProducts();
+  Future<void> addProduct(ProductModel product);
+  Future<void> updateProduct(ProductModel product);
+  Future<void> deleteProduct(String id);
 }
 
 // ── Mock Implementation ────────────────────────────────────────────────────────
@@ -184,6 +190,34 @@ class MockProductRepository implements ProductRepository {
         .where((p) => p.categoryId == categoryId && p.id != productId)
         .take(4)
         .toList();
+  }
+
+  // ── Admin CRUD ─────────────────────────────────────────────────────────────
+  @override
+  Future<List<ProductModel>> getAllProducts() async {
+    await Future.delayed(const Duration(milliseconds: 50));
+    return List<ProductModel>.from(_products);
+  }
+
+  @override
+  Future<void> addProduct(ProductModel product) async {
+    await Future.delayed(const Duration(milliseconds: 100));
+    _products.insert(0, product);
+  }
+
+  @override
+  Future<void> updateProduct(ProductModel product) async {
+    await Future.delayed(const Duration(milliseconds: 100));
+    final idx = _products.indexWhere((p) => p.id == product.id);
+    if (idx >= 0) {
+      _products[idx] = product;
+    }
+  }
+
+  @override
+  Future<void> deleteProduct(String id) async {
+    await Future.delayed(const Duration(milliseconds: 100));
+    _products.removeWhere((p) => p.id == id);
   }
 }
 

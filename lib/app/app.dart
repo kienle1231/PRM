@@ -10,6 +10,7 @@ import '../viewmodels/checkout_viewmodel.dart';
 import '../viewmodels/order_viewmodel.dart';
 import '../viewmodels/notification_viewmodel.dart';
 import '../viewmodels/chat_viewmodel.dart';
+import '../viewmodels/user_admin_viewmodel.dart';
 import '../providers/wishlist_provider.dart';
 import '../repositories/auth_repository.dart';
 import '../repositories/product_repository.dart';
@@ -17,23 +18,32 @@ import '../repositories/cart_repository.dart';
 import '../repositories/order_repository.dart';
 import '../repositories/notification_repository.dart';
 import '../repositories/chat_repository.dart';
+import '../repositories/firebase_chat_repository.dart';
+import '../repositories/user_admin_repository.dart';
 import 'routes.dart';
 
 /// Root app widget with all providers and theme configured.
 class KienCareApp extends StatelessWidget {
-  const KienCareApp({super.key, this.authRepository});
+  const KienCareApp({super.key, this.firebaseReady = false});
 
-  final AuthRepository? authRepository;
+  /// Firebase đã khởi động thành công — dùng Firestore cho Chat.
+  /// Auth luôn dùng MockAuthRepository để giữ tài khoản demo.
+  final bool firebaseReady;
 
   @override
   Widget build(BuildContext context) {
-    // ── Repositories (singletons) ─────────────────────────────────────────────
-    final authRepo = authRepository ?? MockAuthRepository();
+    // —— Repositories (singletons) —————————————————————————————————————————————
+    // Auth luôn dùng Mock — có sẵn tài khoản demo (admin@kiencare.vn / KienCare1)
+    final AuthRepository authRepo = MockAuthRepository();
     final productRepo = MockProductRepository();
     final cartRepo = SharedPrefsCartRepository();
     final orderRepo = SharedPrefsOrderRepository();
     final notifRepo = MockNotificationRepository();
-    final chatRepo = MockChatRepository();
+    // Chat: dùng Firestore khi Firebase sẵn sàng, fallback Mock khi offline
+    final ChatRepository chatRepo = firebaseReady
+        ? FirebaseChatRepository()
+        : MockChatRepository();
+    final userAdminRepo = MockUserAdminRepository();
 
     return MultiProvider(
       providers: [
@@ -57,6 +67,9 @@ class KienCareApp extends StatelessWidget {
         ),
         ChangeNotifierProvider(
           create: (_) => ChatViewModel(chatRepo),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => UserAdminViewModel(userAdminRepo),
         ),
         ChangeNotifierProvider(
           create: (_) => WishlistProvider()..loadWishlist(),

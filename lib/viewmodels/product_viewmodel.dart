@@ -17,9 +17,9 @@ enum SortOption {
 
 /// Manages product listing state: categories, products, search, filter, sort, pagination.
 class ProductViewModel extends ChangeNotifier {
-  final MockProductRepository _repo;
+  final ProductRepository _repo;
 
-  // ── State ──────────────────────────────────────────────────────────────────
+  // ── State ───────────────────────────────────────────────────────────────
   List<CategoryModel> _categories = [];
   List<ProductModel> _products = [];
   List<ProductModel> _featuredProducts = [];
@@ -27,6 +27,7 @@ class ProductViewModel extends ChangeNotifier {
   List<ProductModel> _searchResults = [];
   ProductModel? _selectedProduct;
   List<ProductModel> _relatedProducts = [];
+  List<ProductModel> _adminProducts = []; // All products for admin
 
   String? _selectedCategoryId;
   String _searchQuery = '';
@@ -50,6 +51,7 @@ class ProductViewModel extends ChangeNotifier {
   List<ProductModel> get searchResults => _searchResults;
   ProductModel? get selectedProduct => _selectedProduct;
   List<ProductModel> get relatedProducts => _relatedProducts;
+  List<ProductModel> get adminProducts => _adminProducts;
   String? get selectedCategoryId => _selectedCategoryId;
   String get searchQuery => _searchQuery;
   SortOption get sortOption => _sortOption;
@@ -186,9 +188,59 @@ class ProductViewModel extends ChangeNotifier {
     loadProducts(refresh: true);
   }
 
-  // ── Categories ────────────────────────────────────────────────────────────
+  // ── Categories ─────────────────────────────────────────────────────────────
   Future<void> loadCategories() async {
     _categories = await _repo.getCategories();
     notifyListeners();
+  }
+
+  // ── Admin CRUD ────────────────────────────────────────────────────────────
+  Future<void> loadAdminProducts() async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      _adminProducts = await _repo.getAllProducts();
+    } catch (_) {
+      _error = 'Không thể tải danh sách sản phẩm';
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> addProduct(ProductModel product) async {
+    try {
+      await _repo.addProduct(product);
+      _adminProducts.insert(0, product);
+      notifyListeners();
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> updateProduct(ProductModel product) async {
+    try {
+      await _repo.updateProduct(product);
+      final idx = _adminProducts.indexWhere((p) => p.id == product.id);
+      if (idx >= 0) {
+        _adminProducts[idx] = product;
+        notifyListeners();
+      }
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> deleteProduct(String productId) async {
+    try {
+      await _repo.deleteProduct(productId);
+      _adminProducts.removeWhere((p) => p.id == productId);
+      notifyListeners();
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/address_model.dart';
 import '../models/cart_item_model.dart';
 import '../models/order_model.dart';
+import '../models/product_model.dart';
 import '../views/splash/splash_screen.dart';
 import '../views/onboarding/onboarding_screen.dart';
 import '../views/auth/login_screen.dart';
@@ -19,6 +20,11 @@ import '../views/address/address_form_screen.dart';
 import '../views/orders/order_history_screen.dart';
 import '../views/orders/order_detail_screen.dart';
 import '../views/admin/admin_orders_screen.dart';
+import '../views/admin/admin_dashboard_screen.dart';
+import '../views/admin/admin_product_list_screen.dart';
+import '../views/admin/admin_product_form_screen.dart';
+import '../views/admin/admin_revenue_screen.dart';
+import '../views/admin/admin_user_list_screen.dart';
 import '../views/notifications/notifications_screen.dart';
 import '../views/chat/chat_screen.dart';
 import '../views/profile/profile_screen.dart';
@@ -42,6 +48,11 @@ abstract class AppRoutes {
   static const String orderConfirmation = '/order-confirmation';
   static const String orderHistory = '/orders';
   static const String adminOrders = '/admin-orders';
+  static const String adminDashboard = '/admin-dashboard';
+  static const String adminProducts = '/admin-products';
+  static const String adminProductForm = '/admin-product-form';
+  static const String adminRevenue = '/admin-revenue';
+  static const String adminUsers = '/admin-users';
   static const String notifications = '/notifications';
   static const String chat = '/chat';
   static const String profile = '/profile';
@@ -113,6 +124,22 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       break;
     case AppRoutes.adminOrders:
       page = const AdminOrdersScreen();
+      break;
+    case AppRoutes.adminDashboard:
+      page = const AdminDashboardScreen();
+      break;
+    case AppRoutes.adminProducts:
+      page = const AdminProductListScreen();
+      break;
+    case AppRoutes.adminProductForm:
+      final product = settings.arguments as ProductModel?;
+      page = AdminProductFormScreen(product: product);
+      break;
+    case AppRoutes.adminRevenue:
+      page = const AdminRevenueScreen();
+      break;
+    case AppRoutes.adminUsers:
+      page = const AdminUserListScreen();
       break;
     case AppRoutes.notifications:
       page = const NotificationsScreen();

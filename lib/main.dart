@@ -26,11 +26,7 @@ Future<void> main() async {
 
   final firebaseReady = await FirebaseService.initialize();
   runApp(
-    firebaseReady
-        ? KienCareApp(authRepository: FirebaseAuthRepository())
-        : FirebaseSetupRequiredApp(
-            error: FirebaseService.initializationError,
-          ),
+    KienCareApp(firebaseReady: firebaseReady),
   );
 }
 

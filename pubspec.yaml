@@ -32,6 +32,13 @@ dependencies:
   flutter_rating_bar: ^4.0.1
   badges: ^3.1.2
 
+  # Maps & Location
+  google_maps_flutter: ^2.9.0
+  geolocator: ^13.0.2
+
+  # Firebase Firestore (for chat)
+  cloud_firestore: ^6.5.0
+
   # Utils
   intl: ^0.19.0
   uuid: ^4.4.2

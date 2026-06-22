@@ -1,10 +1,16 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
+
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_strings.dart';
 
 /// LAPTOPHUB store location data model.
 class _StoreLocation {
+  final String id;
   final String name;
   final String address;
   final String phone;
@@ -14,6 +20,7 @@ class _StoreLocation {
   final bool isMainBranch;
 
   const _StoreLocation({
+    required this.id,
     required this.name,
     required this.address,
     required this.phone,
@@ -22,9 +29,11 @@ class _StoreLocation {
     required this.lng,
     this.isMainBranch = false,
   });
+
+  LatLng get latLng => LatLng(lat, lng);
 }
 
-/// Store location screen — shows LAPTOPHUB locations with map and navigation.
+/// Store location screen — shows LAPTOPHUB locations with Google Map and navigation.
 class StoreLocationScreen extends StatefulWidget {
   const StoreLocationScreen({super.key});
 
@@ -32,11 +41,18 @@ class StoreLocationScreen extends StatefulWidget {
   State<StoreLocationScreen> createState() => _StoreLocationScreenState();
 }
 
-class _StoreLocationScreenState extends State<StoreLocationScreen> {
+class _StoreLocationScreenState extends State<StoreLocationScreen>
+    with SingleTickerProviderStateMixin {
+  final Completer<GoogleMapController> _mapController = Completer();
   int _selectedIndex = 0;
+  Position? _currentPosition;
+  bool _isLoadingLocation = false;
+  late AnimationController _animController;
+  late Animation<double> _fadeAnim;
 
   static const List<_StoreLocation> _locations = [
     _StoreLocation(
+      id: 'store_1',
       name: 'LAPTOPHUB - Lê Lợi (Chi nhánh chính)',
       address: '123 Lê Lợi, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh',
       phone: '028 1234 5678',
@@ -46,6 +62,7 @@ class _StoreLocationScreenState extends State<StoreLocationScreen> {
       isMainBranch: true,
     ),
     _StoreLocation(
+      id: 'store_2',
       name: 'LAPTOPHUB - Nguyễn Văn Cừ',
       address: '456 Nguyễn Văn Cừ, Phường 1, Quận 5, TP. Hồ Chí Minh',
       phone: '028 8765 4321',
@@ -54,6 +71,7 @@ class _StoreLocationScreenState extends State<StoreLocationScreen> {
       lng: 106.6840,
     ),
     _StoreLocation(
+      id: 'store_3',
       name: 'LAPTOPHUB - Cầu Giấy (Hà Nội)',
       address: '789 Cầu Giấy, Phường Dịch Vọng, Quận Cầu Giấy, Hà Nội',
       phone: '024 3333 4444',
@@ -62,6 +80,7 @@ class _StoreLocationScreenState extends State<StoreLocationScreen> {
       lng: 105.7922,
     ),
     _StoreLocation(
+      id: 'store_4',
       name: 'LAPTOPHUB - Hải Phòng',
       address: '321 Lê Lợi, Quận Ngô Quyền, Hải Phòng',
       phone: '0225 1111 2222',
@@ -71,17 +90,120 @@ class _StoreLocationScreenState extends State<StoreLocationScreen> {
     ),
   ];
 
+  Set<Marker> get _markers {
+    final markers = <Marker>{};
+    for (int i = 0; i < _locations.length; i++) {
+      final loc = _locations[i];
+      markers.add(
+        Marker(
+          markerId: MarkerId(loc.id),
+          position: loc.latLng,
+          infoWindow: InfoWindow(
+            title: loc.name,
+            snippet: loc.address,
+          ),
+          icon: i == _selectedIndex
+              ? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed)
+              : BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
+          onTap: () => setState(() => _selectedIndex = i),
+        ),
+      );
+    }
+
+    // Add user location marker if available
+    if (_currentPosition != null) {
+      markers.add(
+        Marker(
+          markerId: const MarkerId('my_location'),
+          position: LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
+          infoWindow: const InfoWindow(title: 'Vị trí của bạn'),
+          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
+        ),
+      );
+    }
+
+    return markers;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 400),
+    );
+    _fadeAnim = CurvedAnimation(parent: _animController, curve: Curves.easeOut);
+    _animController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _getCurrentLocation() async {
+    setState(() => _isLoadingLocation = true);
+    try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        _showSnack('Vui lòng bật dịch vụ định vị');
+        return;
+      }
+
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          _showSnack('Quyền truy cập vị trí bị từ chối');
+          return;
+        }
+      }
+      if (permission == LocationPermission.deniedForever) {
+        _showSnack('Hãy cấp quyền vị trí trong cài đặt');
+        return;
+      }
+
+      final position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+        ),
+      );
+      setState(() => _currentPosition = position);
+
+      final ctrl = await _mapController.future;
+      await ctrl.animateCamera(
+        CameraUpdate.newCameraPosition(
+          CameraPosition(
+            target: LatLng(position.latitude, position.longitude),
+            zoom: 14,
+          ),
+        ),
+      );
+    } catch (e) {
+      _showSnack('Không thể lấy vị trí: $e');
+    } finally {
+      if (mounted) setState(() => _isLoadingLocation = false);
+    }
+  }
+
+  Future<void> _animateTo(_StoreLocation location) async {
+    setState(() => _selectedIndex = _locations.indexOf(location));
+    final ctrl = await _mapController.future;
+    await ctrl.animateCamera(
+      CameraUpdate.newCameraPosition(
+        CameraPosition(target: location.latLng, zoom: 15),
+      ),
+    );
+  }
+
   Future<void> _openNavigation(_StoreLocation location) async {
     final url = Uri.parse(
         'https://www.google.com/maps/dir/?api=1&destination=${location.lat},${location.lng}&travelmode=driving');
     if (await canLaunchUrl(url)) {
       await launchUrl(url, mode: LaunchMode.externalApplication);
     } else {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Không thể mở Google Maps')),
-        );
-      }
+      _showSnack('Không thể mở Google Maps');
     }
   }
 
@@ -92,6 +214,17 @@ class _StoreLocationScreenState extends State<StoreLocationScreen> {
     }
   }
 
+  void _showSnack(String msg) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -99,119 +232,149 @@ class _StoreLocationScreenState extends State<StoreLocationScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text(AppStrings.storeLocationTitle),
-      ),
-      body: Column(
-        children: [
-          // Map placeholder (requires Google Maps setup)
-          _buildMapPlaceholder(),
-
-          // Store list
-          Expanded(
-            child: ListView.separated(
-              padding: const EdgeInsets.all(16),
-              itemCount: _locations.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 12),
-              itemBuilder: (_, i) => _StoreCard(
-                location: _locations[i],
-                isSelected: _selectedIndex == i,
-                isDark: isDark,
-                onTap: () => setState(() => _selectedIndex = i),
-                onNavigate: () => _openNavigation(_locations[i]),
-                onCall: () => _callStore(_locations[i]),
-              ),
-            ),
+        actions: [
+          // My location button in AppBar
+          IconButton(
+            icon: _isLoadingLocation
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                  )
+                : const Icon(Icons.my_location_rounded),
+            tooltip: 'Vị trí của tôi',
+            onPressed: _isLoadingLocation ? null : _getCurrentLocation,
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildMapPlaceholder() {
-    // TODO: Replace with Google Maps widget after configuring API key
-    // GoogleMap(
-    //   initialCameraPosition: CameraPosition(
-    //     target: LatLng(_locations[_selectedIndex].lat, _locations[_selectedIndex].lng),
-    //     zoom: 14,
-    //   ),
-    //   markers: _locations.map((l) => Marker(
-    //     markerId: MarkerId(l.name),
-    //     position: LatLng(l.lat, l.lng),
-    //     infoWindow: InfoWindow(title: l.name, snippet: l.address),
-    //   )).toSet(),
-    // )
-
-    return Container(
-      height: 200,
-      color: AppColors.primarySurface,
-      child: Stack(
+      body: Column(
         children: [
-          // Simulated map grid
-          CustomPaint(
-            size: const Size(double.infinity, 200),
-            painter: _MapGridPainter(),
-          ),
-
-          // Center pin
-          Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
+          // ── Google Map ──────────────────────────────────────────────────────
+          SizedBox(
+            height: 260,
+            child: Stack(
               children: [
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.primary.withValues(alpha: 0.3),
-                        blurRadius: 16,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
+                GoogleMap(
+                  initialCameraPosition: CameraPosition(
+                    target: _locations[0].latLng,
+                    zoom: 12,
                   ),
-                  child: const Icon(Icons.location_on_rounded,
-                      color: AppColors.secondary, size: 32),
+                  onMapCreated: (ctrl) => _mapController.complete(ctrl),
+                  markers: _markers,
+                  myLocationEnabled: true,
+                  myLocationButtonEnabled: false,
+                  zoomControlsEnabled: false,
+                  mapToolbarEnabled: false,
+                  compassEnabled: true,
                 ),
-                const SizedBox(height: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.1),
-                        blurRadius: 8,
-                      ),
-                    ],
-                  ),
-                  child: const Text(
-                    '📍 ${_storeCount} cửa hàng LAPTOPHUB',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.primary,
-                      fontSize: 13,
+
+                // Store count badge
+                Positioned(
+                  top: 12,
+                  left: 12,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.12),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
                     ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.store_rounded,
+                            color: AppColors.primary, size: 16),
+                        const SizedBox(width: 6),
+                        Text(
+                          '${_locations.length} cửa hàng',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.primary,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                // My location FAB
+                Positioned(
+                  bottom: 12,
+                  right: 12,
+                  child: FloatingActionButton.small(
+                    heroTag: 'myLocation',
+                    onPressed: _isLoadingLocation ? null : _getCurrentLocation,
+                    backgroundColor: Colors.white,
+                    child: _isLoadingLocation
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.my_location_rounded,
+                            color: AppColors.primary, size: 20),
                   ),
                 ),
               ],
             ),
           ),
 
-          // Setup hint
-          Positioned(
-            bottom: 8,
-            right: 8,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                color: Colors.black54,
-                borderRadius: BorderRadius.circular(8),
+          // ── Store list ──────────────────────────────────────────────────────
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            decoration: BoxDecoration(
+              color: isDark ? AppColors.surfaceDark : Colors.white,
+              border: Border(
+                bottom: BorderSide(color: AppColors.borderLight),
               ),
-              child: const Text(
-                'Cần cấu hình Google Maps API Key',
-                style: TextStyle(color: Colors.white, fontSize: 10),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.location_on_rounded,
+                    color: AppColors.secondary, size: 18),
+                const SizedBox(width: 6),
+                Text(
+                  'Chọn chi nhánh',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: isDark ? Colors.white : AppColors.textPrimary,
+                  ),
+                ),
+                const Spacer(),
+                Text(
+                  '${_locations.length} chi nhánh',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          Expanded(
+            child: FadeTransition(
+              opacity: _fadeAnim,
+              child: ListView.separated(
+                padding: const EdgeInsets.all(16),
+                itemCount: _locations.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 12),
+                itemBuilder: (_, i) => _StoreCard(
+                  location: _locations[i],
+                  isSelected: _selectedIndex == i,
+                  isDark: isDark,
+                  onTap: () => _animateTo(_locations[i]),
+                  onNavigate: () => _openNavigation(_locations[i]),
+                  onCall: () => _callStore(_locations[i]),
+                ),
               ),
             ),
           ),
@@ -219,10 +382,9 @@ class _StoreLocationScreenState extends State<StoreLocationScreen> {
       ),
     );
   }
-
-  static const _storeCount = 4;
 }
 
+// ── Store Card ─────────────────────────────────────────────────────────────────
 class _StoreCard extends StatelessWidget {
   final _StoreLocation location;
   final bool isSelected;
@@ -245,11 +407,14 @@ class _StoreCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOut,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isDark ? AppColors.cardDark : Colors.white,
-          borderRadius: BorderRadius.circular(14),
+          color: isSelected
+              ? AppColors.primary.withValues(alpha: 0.04)
+              : (isDark ? AppColors.cardDark : Colors.white),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isSelected ? AppColors.primary : AppColors.borderLight,
             width: isSelected ? 2 : 0.5,
@@ -259,28 +424,38 @@ class _StoreCard extends StatelessWidget {
               color: isSelected
                   ? AppColors.primary.withValues(alpha: 0.1)
                   : Colors.black.withValues(alpha: 0.04),
-              blurRadius: 10,
-              offset: const Offset(0, 2),
+              blurRadius: 12,
+              offset: const Offset(0, 3),
             ),
           ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Store name + main badge
+            // Store name + badges
             Row(
               children: [
-                Icon(
-                  Icons.store_rounded,
-                  color: isSelected ? AppColors.primary : AppColors.textHint,
-                  size: 20,
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 250),
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? AppColors.primary.withValues(alpha: 0.15)
+                        : AppColors.primarySurface,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    Icons.store_rounded,
+                    color: isSelected ? AppColors.primary : AppColors.textHint,
+                    size: 18,
+                  ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 10),
                 Expanded(
                   child: Text(
                     location.name,
                     style: TextStyle(
-                      fontSize: 14,
+                      fontSize: 13,
                       fontWeight: FontWeight.w700,
                       color: isSelected ? AppColors.primary : null,
                     ),
@@ -288,8 +463,8 @@ class _StoreCard extends StatelessWidget {
                 ),
                 if (location.isMainBranch)
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 8, vertical: 3),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(
                       gradient: AppColors.primaryGradient,
                       borderRadius: BorderRadius.circular(8),
@@ -304,36 +479,26 @@ class _StoreCard extends StatelessWidget {
                   ),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
 
             // Address
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Icon(Icons.location_on_outlined,
-                    size: 14, color: AppColors.textHint),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: Text(
-                    location.address,
-                    style: const TextStyle(
-                        fontSize: 12, color: AppColors.textSecondary),
-                  ),
-                ),
-              ],
+            _InfoRow(
+              icon: Icons.location_on_outlined,
+              text: location.address,
             ),
             const SizedBox(height: 4),
 
             // Hours
-            Row(
-              children: [
-                const Icon(Icons.access_time_outlined,
-                    size: 14, color: AppColors.textHint),
-                const SizedBox(width: 6),
-                Text(location.hours,
-                    style: const TextStyle(
-                        fontSize: 12, color: AppColors.textSecondary)),
-              ],
+            _InfoRow(
+              icon: Icons.access_time_outlined,
+              text: location.hours,
+            ),
+            const SizedBox(height: 4),
+
+            // Phone
+            _InfoRow(
+              icon: Icons.phone_outlined,
+              text: location.phone,
             ),
             const SizedBox(height: 12),
 
@@ -343,25 +508,29 @@ class _StoreCard extends StatelessWidget {
                 Expanded(
                   child: OutlinedButton.icon(
                     onPressed: onCall,
-                    icon: const Icon(Icons.phone_outlined, size: 16),
+                    icon: const Icon(Icons.phone_rounded, size: 15),
                     label: const Text('Gọi điện'),
                     style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      textStyle: const TextStyle(fontSize: 12),
+                      padding: const EdgeInsets.symmetric(vertical: 9),
+                      textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
                       minimumSize: Size.zero,
+                      side: BorderSide(color: AppColors.borderLight),
                     ),
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 10),
                 Expanded(
+                  flex: 2,
                   child: ElevatedButton.icon(
                     onPressed: onNavigate,
-                    icon: const Icon(Icons.directions_rounded, size: 16),
+                    icon: const Icon(Icons.directions_rounded, size: 15),
                     label: const Text('Chỉ đường'),
                     style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      textStyle: const TextStyle(fontSize: 12),
+                      padding: const EdgeInsets.symmetric(vertical: 9),
+                      textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
                       minimumSize: Size.zero,
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
                     ),
                   ),
                 ),
@@ -374,38 +543,26 @@ class _StoreCard extends StatelessWidget {
   }
 }
 
-/// Paints a simple street-map-like grid background.
-class _MapGridPainter extends CustomPainter {
+class _InfoRow extends StatelessWidget {
+  final IconData icon;
+  final String text;
+
+  const _InfoRow({required this.icon, required this.text});
+
   @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = const Color(0xFFD0D8E8)
-      ..strokeWidth = 1;
-
-    // Horizontal lines
-    for (double y = 0; y < size.height; y += 30) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
-    }
-    // Vertical lines
-    for (double x = 0; x < size.width; x += 60) {
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
-    }
-
-    // Thicker roads
-    final roadPaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.8)
-      ..strokeWidth = 8;
-
-    canvas.drawLine(Offset(size.width * 0.3, 0),
-        Offset(size.width * 0.3, size.height), roadPaint);
-    canvas.drawLine(Offset(size.width * 0.7, 0),
-        Offset(size.width * 0.7, size.height), roadPaint);
-    canvas.drawLine(Offset(0, size.height * 0.4),
-        Offset(size.width, size.height * 0.4), roadPaint);
-    canvas.drawLine(Offset(0, size.height * 0.7),
-        Offset(size.width, size.height * 0.7), roadPaint);
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 13, color: AppColors.textHint),
+        const SizedBox(width: 6),
+        Expanded(
+          child: Text(
+            text,
+            style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+          ),
+        ),
+      ],
+    );
   }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

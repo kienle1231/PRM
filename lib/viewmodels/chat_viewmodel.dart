@@ -6,10 +6,10 @@ import 'package:uuid/uuid.dart';
 
 /// Manages real-time chat state for customer support.
 class ChatViewModel extends ChangeNotifier {
-  final MockChatRepository _repo;
+  final ChatRepository _repo; // ← dùng interface, hỗ trợ cả Mock & Firebase
   final _uuid = const Uuid();
 
-  static const String _chatId = 'support';
+  String _chatId = 'support'; // sẽ được set per-user khi subscribe
 
   List<MessageModel> _messages = [];
   bool _isLoading = false;
@@ -28,10 +28,16 @@ class ChatViewModel extends ChangeNotifier {
       _messages.where((m) => m.isSupport && !m.isRead).length;
 
   // ── Subscribe to Messages ─────────────────────────────────────────────────
+  /// [userId] được dùng làm chatId để mỗi user có phòng chat riêng với admin.
+  /// Nếu userId rỗng hoặc là 'guest', dùng chung phòng 'support'.
   void subscribe(String userId) {
+    // Mỗi user có collection messages riêng: chats/{userId}/messages
+    _chatId = (userId.isNotEmpty && userId != 'guest') ? userId : 'support';
+
     _isLoading = true;
     notifyListeners();
 
+    _subscription?.cancel();
     _subscription = _repo.getMessages(_chatId).listen((msgs) {
       _messages = msgs;
       _isLoading = false;

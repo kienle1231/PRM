@@ -9,6 +9,7 @@ class UserModel {
   final String? avatar;
   final List<AddressModel> addresses;
   final String role; // 'user' hoặc 'admin'
+  final bool isDisabled; // true = tài khoản bị vô hiệu hóa bởi admin
   final DateTime createdAt;
 
   const UserModel({
@@ -19,8 +20,11 @@ class UserModel {
     this.avatar,
     this.addresses = const [],
     this.role = 'user',
+    this.isDisabled = false,
     required this.createdAt,
   });
+
+  bool get isAdmin => role == 'admin';
 
   UserModel copyWith({
     String? id,
@@ -30,6 +34,7 @@ class UserModel {
     String? avatar,
     List<AddressModel>? addresses,
     String? role,
+    bool? isDisabled,
     DateTime? createdAt,
   }) =>
       UserModel(
@@ -40,6 +45,7 @@ class UserModel {
         avatar: avatar ?? this.avatar,
         addresses: addresses ?? this.addresses,
         role: role ?? this.role,
+        isDisabled: isDisabled ?? this.isDisabled,
         createdAt: createdAt ?? this.createdAt,
       );
 
@@ -51,6 +57,7 @@ class UserModel {
         'avatar': avatar,
         'addresses': addresses.map((a) => a.toJson()).toList(),
         'role': role,
+        'isDisabled': isDisabled,
         'createdAt': createdAt.toIso8601String(),
       };
 
@@ -65,6 +72,7 @@ class UserModel {
                 .toList() ??
             const [],
         role: json['role'] as String? ?? 'user',
+        isDisabled: json['isDisabled'] as bool? ?? false,
         createdAt: DateTime.parse(
             json['createdAt'] as String? ?? DateTime.now().toIso8601String()),
       );

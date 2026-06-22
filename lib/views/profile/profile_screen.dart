@@ -72,6 +72,71 @@ class ProfileScreen extends StatelessWidget {
                   isDark: isDark,
                 ),
 
+                // ── Admin Panel Banner ──────────────────────────────────
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                  child: GestureDetector(
+                    onTap: () => Navigator.pushNamed(context, AppRoutes.adminDashboard),
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF1A1A2E), Color(0xFF16213E), Color(0xFF0F3460)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF1A1A2E).withValues(alpha: 0.3),
+                            blurRadius: 12,
+                            offset: const Offset(0, 6),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: AppColors.secondary.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Icon(Icons.admin_panel_settings_rounded,
+                                color: AppColors.secondary, size: 24),
+                          ),
+                          const SizedBox(width: 14),
+                          const Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Admin Panel',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                                SizedBox(height: 2),
+                                Text(
+                                  'Quản lý sản phẩm, đơn hàng & doanh thu',
+                                  style: TextStyle(
+                                    color: Colors.white60,
+                                    fontSize: 11,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const Icon(Icons.arrow_forward_ios_rounded,
+                              color: Colors.white38, size: 16),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+
                 _buildMenuSection(
                   title: 'Tài khoản',
                   items: [
@@ -82,14 +147,6 @@ class ProfileScreen extends StatelessWidget {
                       onTap: () => Navigator.pushNamed(
                           context, AppRoutes.editProfile),
                     ),
-                    if (user.role == 'admin')
-                      _MenuItem(
-                        icon: Icons.admin_panel_settings_outlined,
-                        iconColor: AppColors.primary,
-                        label: 'Quản lý đơn hàng (Admin)',
-                        onTap: () => Navigator.pushNamed(
-                            context, AppRoutes.adminOrders),
-                      ),
                     _MenuItem(
                       icon: Icons.notifications_outlined,
                       iconColor: AppColors.warning,
