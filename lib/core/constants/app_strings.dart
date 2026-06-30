@@ -28,7 +28,8 @@ abstract class AppStrings {
   static const String orContinueWith = 'hoặc';
 
   // ── Onboarding ────────────────────────────────────────────────────────────
-  static const String onboarding1Title = 'Laptop chính hãng – Đồng hành cùng thành công';
+  static const String onboarding1Title =
+      'Laptop chính hãng – Đồng hành cùng thành công';
   static const String onboarding1Desc =
       'Laptop, Linh kiện, Phụ kiện — tất cả có mặt tại LAPTOPHUB với giá tốt nhất.';
   static const String onboarding2Title = 'Giao hàng siêu nhanh';
@@ -54,6 +55,7 @@ abstract class AppStrings {
   static const String categories = 'Danh mục';
   static const String viewAll = 'Xem tất cả';
   static const String searchHint = 'Tìm laptop, gaming, phụ kiện...';
+  static const String productSearchHint = 'Tìm kiếm chiếc laptop của bạn';
 
   // ── Products ──────────────────────────────────────────────────────────────
   static const String products = 'Sản phẩm';

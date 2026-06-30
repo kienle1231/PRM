@@ -4,6 +4,7 @@ import '../../app/routes.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_strings.dart';
 import '../../viewmodels/auth_viewmodel.dart';
+import '../../viewmodels/order_viewmodel.dart';
 import '../../providers/wishlist_provider.dart';
 
 /// User profile screen with account info, settings, and navigation links.
@@ -20,25 +21,35 @@ class ProfileScreen extends StatelessWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.edit_outlined),
-            onPressed: () => Navigator.pushNamed(context, AppRoutes.editProfile),
+            onPressed: () =>
+                Navigator.pushNamed(context, AppRoutes.editProfile),
             tooltip: AppStrings.editProfile,
           ),
         ],
       ),
-      body: Consumer<AuthViewModel>(
-        builder: (context, authVM, __) {
+      body: Consumer2<AuthViewModel, OrderViewModel>(
+        builder: (context, authVM, orderVM, __) {
           final user = authVM.currentUser;
           if (user == null) {
             return const Center(child: CircularProgressIndicator());
           }
 
-          final wishlistCount = context.watch<WishlistProvider>().totalWishlistItems;
+          final wishlistCount =
+              context.watch<WishlistProvider>().totalWishlistItems;
+          final orderCount = orderVM.orders.length;
 
           return SingleChildScrollView(
             child: Column(
               children: [
                 // Profile Header
-                _buildProfileHeader(context, user.name, user.email, wishlistCount, isDark),
+                _buildProfileHeader(
+                  context,
+                  user.name,
+                  user.email,
+                  orderCount,
+                  wishlistCount,
+                  isDark,
+                ),
 
                 const SizedBox(height: 8),
 
@@ -51,22 +62,21 @@ class ProfileScreen extends StatelessWidget {
                       iconColor: AppColors.primary,
                       label: AppStrings.myOrders,
                       trailing: null,
-                      onTap: () => Navigator.pushNamed(
-                          context, AppRoutes.orderHistory),
+                      onTap: () =>
+                          Navigator.pushNamed(context, AppRoutes.orderHistory),
                     ),
                     _MenuItem(
                       icon: Icons.location_on_outlined,
                       iconColor: AppColors.accent,
                       label: AppStrings.storeLocation,
-                      onTap: () => Navigator.pushNamed(
-                          context, AppRoutes.storeLocation),
+                      onTap: () =>
+                          Navigator.pushNamed(context, AppRoutes.storeLocation),
                     ),
                     _MenuItem(
                       icon: Icons.chat_bubble_outline_rounded,
                       iconColor: AppColors.success,
                       label: AppStrings.support,
-                      onTap: () =>
-                          Navigator.pushNamed(context, AppRoutes.chat),
+                      onTap: () => Navigator.pushNamed(context, AppRoutes.chat),
                     ),
                   ],
                   isDark: isDark,
@@ -76,19 +86,25 @@ class ProfileScreen extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
                   child: GestureDetector(
-                    onTap: () => Navigator.pushNamed(context, AppRoutes.adminDashboard),
+                    onTap: () =>
+                        Navigator.pushNamed(context, AppRoutes.adminDashboard),
                     child: Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
-                          colors: [Color(0xFF1A1A2E), Color(0xFF16213E), Color(0xFF0F3460)],
+                          colors: [
+                            Color(0xFF1A1A2E),
+                            Color(0xFF16213E),
+                            Color(0xFF0F3460)
+                          ],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         ),
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFF1A1A2E).withValues(alpha: 0.3),
+                            color:
+                                const Color(0xFF1A1A2E).withValues(alpha: 0.3),
                             blurRadius: 12,
                             offset: const Offset(0, 6),
                           ),
@@ -102,8 +118,10 @@ class ProfileScreen extends StatelessWidget {
                               color: AppColors.secondary.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            child: const Icon(Icons.admin_panel_settings_rounded,
-                                color: AppColors.secondary, size: 24),
+                            child: const Icon(
+                                Icons.admin_panel_settings_rounded,
+                                color: AppColors.secondary,
+                                size: 24),
                           ),
                           const SizedBox(width: 14),
                           const Expanded(
@@ -144,22 +162,22 @@ class ProfileScreen extends StatelessWidget {
                       icon: Icons.person_outline_rounded,
                       iconColor: AppColors.info,
                       label: AppStrings.editProfile,
-                      onTap: () => Navigator.pushNamed(
-                          context, AppRoutes.editProfile),
+                      onTap: () =>
+                          Navigator.pushNamed(context, AppRoutes.editProfile),
                     ),
                     _MenuItem(
                       icon: Icons.notifications_outlined,
                       iconColor: AppColors.warning,
                       label: AppStrings.notifications,
-                      onTap: () => Navigator.pushNamed(
-                          context, AppRoutes.notifications),
+                      onTap: () =>
+                          Navigator.pushNamed(context, AppRoutes.notifications),
                     ),
                     _MenuItem(
                       icon: Icons.favorite_outline_rounded,
                       iconColor: AppColors.error,
                       label: 'Danh sách yêu thích',
-                      onTap: () => Navigator.pushNamed(
-                          context, AppRoutes.wishlist),
+                      onTap: () =>
+                          Navigator.pushNamed(context, AppRoutes.wishlist),
                     ),
                   ],
                   isDark: isDark,
@@ -190,8 +208,8 @@ class ProfileScreen extends StatelessWidget {
                 // App version
                 Text(
                   'LAPTOPHUB v${AppStrings.appVersion}',
-                  style: const TextStyle(
-                      fontSize: 12, color: AppColors.textHint),
+                  style:
+                      const TextStyle(fontSize: 12, color: AppColors.textHint),
                 ),
                 const SizedBox(height: 8),
                 const Text(
@@ -208,7 +226,13 @@ class ProfileScreen extends StatelessWidget {
   }
 
   Widget _buildProfileHeader(
-      BuildContext context, String name, String email, int wishlistCount, bool isDark) {
+    BuildContext context,
+    String name,
+    String email,
+    int orderCount,
+    int wishlistCount,
+    bool isDark,
+  ) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
@@ -266,11 +290,12 @@ class ProfileScreen extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              _StatItem(value: '2', label: 'Đơn hàng'),
+              _StatItem(value: orderCount.toString(), label: 'Đơn hàng'),
               Container(width: 1, height: 40, color: Colors.white30),
               GestureDetector(
                 onTap: () => Navigator.pushNamed(context, AppRoutes.wishlist),
-                child: _StatItem(value: wishlistCount.toString(), label: 'Yêu thích'),
+                child: _StatItem(
+                    value: wishlistCount.toString(), label: 'Yêu thích'),
               ),
               Container(width: 1, height: 40, color: Colors.white30),
               _StatItem(value: '0', label: 'Điểm tích lũy'),
@@ -353,8 +378,7 @@ class ProfileScreen extends StatelessWidget {
               Navigator.pushNamedAndRemoveUntil(
                   context, AppRoutes.login, (_) => false);
             },
-            style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.error),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
             child: const Text(AppStrings.yes),
           ),
         ],

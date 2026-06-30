@@ -1,10 +1,15 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:badges/badges.dart' as badges;
 import '../core/constants/app_strings.dart';
 import '../core/constants/app_colors.dart';
+import '../viewmodels/auth_viewmodel.dart';
 import '../viewmodels/cart_viewmodel.dart';
 import '../viewmodels/notification_viewmodel.dart';
+import '../viewmodels/order_viewmodel.dart';
+import '../providers/wishlist_provider.dart';
 import 'home/home_screen.dart';
 import 'products/product_list_screen.dart';
 import 'cart/cart_screen.dart';
@@ -29,6 +34,23 @@ class _MainShellState extends State<MainShell> {
   void initState() {
     super.initState();
     _currentIndex = widget.initialIndex;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final userId = context.read<AuthViewModel>().currentUser?.id;
+      if (userId == null) return;
+
+      unawaited(
+          context.read<CartViewModel>().initialize(userId).catchError((_) {}));
+      unawaited(context
+          .read<WishlistProvider>()
+          .setActiveUser(userId)
+          .catchError((_) {}));
+      unawaited(context
+          .read<NotificationViewModel>()
+          .loadNotifications(userId)
+          .catchError((_) {}));
+      unawaited(
+          context.read<OrderViewModel>().loadOrders(userId).catchError((_) {}));
+    });
   }
 
   final List<Widget> _tabs = const [
@@ -111,7 +133,9 @@ class _MainShellState extends State<MainShell> {
               icon: badges.Badge(
                 showBadge: notifVM.hasUnread,
                 badgeContent: Text(
-                  notifVM.unreadCount > 9 ? '9+' : notifVM.unreadCount.toString(),
+                  notifVM.unreadCount > 9
+                      ? '9+'
+                      : notifVM.unreadCount.toString(),
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 9,
@@ -127,7 +151,9 @@ class _MainShellState extends State<MainShell> {
               activeIcon: badges.Badge(
                 showBadge: notifVM.hasUnread,
                 badgeContent: Text(
-                  notifVM.unreadCount > 9 ? '9+' : notifVM.unreadCount.toString(),
+                  notifVM.unreadCount > 9
+                      ? '9+'
+                      : notifVM.unreadCount.toString(),
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 9,

@@ -6,7 +6,7 @@ import '../repositories/cart_repository.dart';
 /// Manages shopping cart state.
 /// Handles add, remove, update quantity, total calculation, and persistence.
 class CartViewModel extends ChangeNotifier {
-  final SharedPrefsCartRepository _repo;
+  final CartRepository _repo;
   String? _userId;
 
   List<CartItemModel> _items = [];
@@ -57,7 +57,8 @@ class CartViewModel extends ChangeNotifier {
       // Đã có trong giỏ — kiểm tra tồn kho trước khi tăng
       final newQty = _items[idx].quantity + quantity;
       if (newQty > product.stock) {
-        _message = 'Không thể thêm. Tồn kho chỉ còn ${product.stock}, đã có ${_items[idx].quantity} trong giỏ';
+        _message =
+            'Không thể thêm. Tồn kho chỉ còn ${product.stock}, đã có ${_items[idx].quantity} trong giỏ';
         notifyListeners();
         return;
       }
@@ -79,7 +80,8 @@ class CartViewModel extends ChangeNotifier {
         stock: product.stock,
       ));
     }
-    _message = '${product.name.length > 30 ? '${product.name.substring(0, 30)}...' : product.name} đã thêm vào giỏ';
+    _message =
+        '${product.name.length > 30 ? '${product.name.substring(0, 30)}...' : product.name} đã thêm vào giỏ';
     await _persist();
   }
 

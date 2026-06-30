@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../app/routes.dart';
@@ -55,18 +57,20 @@ class _LoginScreenState extends State<LoginScreen>
   Future<void> _login() async {
     if (!_formKey.currentState!.validate()) return;
     final authVM = context.read<AuthViewModel>();
+    final cartVM = context.read<CartViewModel>();
+    final notificationVM = context.read<NotificationViewModel>();
+    final orderVM = context.read<OrderViewModel>();
+
     final success = await authVM.login(_emailCtrl.text, _passwordCtrl.text);
     if (!mounted) return;
 
     if (success) {
-      // Initialize user-dependent ViewModels
       final userId = authVM.currentUser!.id;
-      await Future.wait([
-        context.read<CartViewModel>().initialize(userId),
-        context.read<NotificationViewModel>().loadNotifications(userId),
-        context.read<OrderViewModel>().loadOrders(userId),
-      ]);
-      if (!mounted) return;
+      unawaited(Future.wait([
+        cartVM.initialize(userId).catchError((_) {}),
+        notificationVM.loadNotifications(userId).catchError((_) {}),
+        orderVM.loadOrders(userId).catchError((_) {}),
+      ]));
       Navigator.pushReplacementNamed(context, AppRoutes.main);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(

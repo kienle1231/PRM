@@ -1,7 +1,8 @@
 import 'dart:convert';
 
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:path/path.dart' as p;
+import 'package:sqflite/sqflite.dart';
 
 import '../models/user_model.dart';
 import '../models/address_model.dart';
@@ -37,14 +38,45 @@ class AuthFailure implements Exception {
 class FirebaseAuthRepository implements AuthRepository {
   FirebaseAuthRepository({
     FirebaseAuth? auth,
-    Future<SharedPreferences> Function()? preferences,
-  })  : _auth = auth ?? FirebaseAuth.instance,
-        _preferences = preferences ?? SharedPreferences.getInstance;
+  }) : _auth = auth ?? FirebaseAuth.instance;
 
   final FirebaseAuth _auth;
-  final Future<SharedPreferences> Function() _preferences;
 
-  static const String _profilePrefix = 'auth_profile_';
+  static const String _databaseName = 'kiencare_auth.db';
+  static const int _databaseVersion = 1;
+  static const String _profilesTable = 'user_profiles';
+
+  static Database? _database;
+
+  Future<Database> get _db async {
+    if (_database != null) return _database!;
+
+    final dbPath = await getDatabasesPath();
+    final path = p.join(dbPath, _databaseName);
+
+    _database = await openDatabase(
+      path,
+      version: _databaseVersion,
+      onCreate: (db, version) async {
+        await db.execute('''
+          CREATE TABLE $_profilesTable (
+            user_id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            email TEXT NOT NULL,
+            phone TEXT NOT NULL,
+            avatar TEXT,
+            role TEXT NOT NULL,
+            is_disabled INTEGER NOT NULL,
+            created_at TEXT NOT NULL,
+            profile_json TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+          )
+        ''');
+      },
+    );
+
+    return _database!;
+  }
 
   @override
   Future<UserModel> signIn(String email, String password) async {
@@ -145,18 +177,7 @@ class FirebaseAuthRepository implements AuthRepository {
   }
 
   Future<UserModel> _toUserModel(User user) async {
-    final prefs = await _preferences();
-    final rawProfile = prefs.getString('$_profilePrefix${user.uid}');
-    UserModel? storedProfile;
-    if (rawProfile != null) {
-      try {
-        storedProfile = UserModel.fromJson(
-          jsonDecode(rawProfile) as Map<String, dynamic>,
-        );
-      } on FormatException {
-        await prefs.remove('$_profilePrefix${user.uid}');
-      }
-    }
+    final storedProfile = await _getStoredProfile(user.uid);
 
     return UserModel(
       id: user.uid,
@@ -165,6 +186,8 @@ class FirebaseAuthRepository implements AuthRepository {
       phone: storedProfile?.phone ?? user.phoneNumber ?? '',
       avatar: storedProfile?.avatar ?? user.photoURL,
       addresses: storedProfile?.addresses ?? [],
+      role: storedProfile?.role ?? 'user',
+      isDisabled: storedProfile?.isDisabled ?? false,
       createdAt: user.metadata.creationTime ??
           storedProfile?.createdAt ??
           DateTime.now(),
@@ -172,11 +195,60 @@ class FirebaseAuthRepository implements AuthRepository {
   }
 
   Future<void> _saveProfile(UserModel user) async {
-    final prefs = await _preferences();
-    await prefs.setString(
-      '$_profilePrefix${user.id}',
-      jsonEncode(user.toJson()),
-    );
+    try {
+      final db = await _db;
+      final now = DateTime.now().toIso8601String();
+
+      await db.insert(
+        _profilesTable,
+        {
+          'user_id': user.id,
+          'name': user.name,
+          'email': user.email,
+          'phone': user.phone,
+          'avatar': user.avatar,
+          'role': user.role,
+          'is_disabled': user.isDisabled ? 1 : 0,
+          'created_at': user.createdAt.toIso8601String(),
+          'profile_json': jsonEncode(user.toJson()),
+          'updated_at': now,
+        },
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    } catch (_) {
+      // Firebase Auth is the source of truth for account access. A local
+      // profile-cache error must not block sign up, sign in, or password reset.
+    }
+  }
+
+  Future<UserModel?> _getStoredProfile(String userId) async {
+    try {
+      final db = await _db;
+      final rows = await db.query(
+        _profilesTable,
+        where: 'user_id = ?',
+        whereArgs: [userId],
+        limit: 1,
+      );
+      if (rows.isEmpty) return null;
+
+      return UserModel.fromJson(
+        jsonDecode(rows.first['profile_json'] as String)
+            as Map<String, dynamic>,
+      );
+    } on FormatException {
+      try {
+        final db = await _db;
+        await db.delete(
+          _profilesTable,
+          where: 'user_id = ?',
+          whereArgs: [userId],
+        );
+      } catch (_) {}
+      return null;
+    } catch (_) {
+      return null;
+    }
   }
 
   String _messageFor(FirebaseAuthException error) {
