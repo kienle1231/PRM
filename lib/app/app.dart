@@ -26,23 +26,21 @@ import 'routes.dart';
 class KienCareApp extends StatelessWidget {
   const KienCareApp({super.key, this.firebaseReady = false});
 
-  /// Firebase đã khởi động thành công — dùng Firestore cho Chat.
-  /// Auth luôn dùng MockAuthRepository để giữ tài khoản demo.
+  /// Firebase đã khởi động thành công — dùng Firebase cho Auth và Chat.
   final bool firebaseReady;
 
   @override
   Widget build(BuildContext context) {
     // —— Repositories (singletons) —————————————————————————————————————————————
-    // Auth luôn dùng Mock — có sẵn tài khoản demo (admin@kiencare.vn / KienCare1)
-    final AuthRepository authRepo = MockAuthRepository();
+    final AuthRepository authRepo =
+        firebaseReady ? FirebaseAuthRepository() : MockAuthRepository();
     final productRepo = MockProductRepository();
-    final cartRepo = SharedPrefsCartRepository();
-    final orderRepo = SharedPrefsOrderRepository();
+    final cartRepo = SQLiteCartRepository();
+    final orderRepo = SQLiteOrderRepository();
     final notifRepo = MockNotificationRepository();
     // Chat: dùng Firestore khi Firebase sẵn sàng, fallback Mock khi offline
-    final ChatRepository chatRepo = firebaseReady
-        ? FirebaseChatRepository()
-        : MockChatRepository();
+    final ChatRepository chatRepo =
+        firebaseReady ? FirebaseChatRepository() : MockChatRepository();
     final userAdminRepo = MockUserAdminRepository();
 
     return MultiProvider(
@@ -72,7 +70,7 @@ class KienCareApp extends StatelessWidget {
           create: (_) => UserAdminViewModel(userAdminRepo),
         ),
         ChangeNotifierProvider(
-          create: (_) => WishlistProvider()..loadWishlist(),
+          create: (_) => WishlistProvider(),
         ),
       ],
       child: const _AppView(),

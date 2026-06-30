@@ -2,12 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'app/app.dart';
-import 'repositories/auth_repository.dart';
 import 'services/firebase_service.dart';
+import 'services/database_initializer.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  initializeDatabase();
   await initializeDateFormatting('vi_VN', null);
 
   await SystemChrome.setPreferredOrientations([

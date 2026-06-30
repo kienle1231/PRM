@@ -49,6 +49,8 @@ dependencies:
 
   # Google Fonts (downloads Outfit at runtime)
   google_fonts: ^6.2.1
+  sqflite_common_ffi: ^2.4.0+3
+  sqflite_common_ffi_web: ^1.1.1
 
 dev_dependencies:
   flutter_test:

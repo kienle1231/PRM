@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../app/routes.dart';
@@ -48,6 +50,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
 
     final authVM = context.read<AuthViewModel>();
+    final cartVM = context.read<CartViewModel>();
+    final notificationVM = context.read<NotificationViewModel>();
+    final orderVM = context.read<OrderViewModel>();
+
     final success = await authVM.register(
       _nameCtrl.text.trim(),
       _emailCtrl.text.trim(),
@@ -59,12 +65,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     if (success) {
       final userId = authVM.currentUser!.id;
-      await Future.wait([
-        context.read<CartViewModel>().initialize(userId),
-        context.read<NotificationViewModel>().loadNotifications(userId),
-        context.read<OrderViewModel>().loadOrders(userId),
-      ]);
-      if (!mounted) return;
+      unawaited(Future.wait([
+        cartVM.initialize(userId).catchError((_) {}),
+        notificationVM.loadNotifications(userId).catchError((_) {}),
+        orderVM.loadOrders(userId).catchError((_) {}),
+      ]));
       Navigator.pushReplacementNamed(context, AppRoutes.main);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -105,7 +110,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
               ),
               const SizedBox(height: 32),
-
               Form(
                 key: _formKey,
                 child: Column(
@@ -170,8 +174,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           icon: Icon(_obscurePassword
                               ? Icons.visibility_off_outlined
                               : Icons.visibility_outlined),
-                          onPressed: () =>
-                              setState(() => _obscurePassword = !_obscurePassword),
+                          onPressed: () => setState(
+                              () => _obscurePassword = !_obscurePassword),
                         ),
                       ),
                     ),
@@ -184,7 +188,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       obscureText: _obscureConfirm,
                       textInputAction: TextInputAction.done,
                       onFieldSubmitted: (_) => _register(),
-                      validator: AppValidators.confirmPassword(_passwordCtrl.text),
+                      validator:
+                          AppValidators.confirmPassword(_passwordCtrl.text),
                       decoration: InputDecoration(
                         labelText: AppStrings.confirmPassword,
                         hintText: 'Nhập lại mật khẩu',
@@ -193,8 +198,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           icon: Icon(_obscureConfirm
                               ? Icons.visibility_off_outlined
                               : Icons.visibility_outlined),
-                          onPressed: () =>
-                              setState(() => _obscureConfirm = !_obscureConfirm),
+                          onPressed: () => setState(
+                              () => _obscureConfirm = !_obscureConfirm),
                         ),
                       ),
                     ),
@@ -214,15 +219,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                         Expanded(
                           child: GestureDetector(
-                            onTap: () =>
-                                setState(() => _agreedToTerms = !_agreedToTerms),
+                            onTap: () => setState(
+                                () => _agreedToTerms = !_agreedToTerms),
                             child: Padding(
                               padding: const EdgeInsets.only(top: 12),
                               child: RichText(
                                 text: TextSpan(
                                   style: TextStyle(
                                     fontSize: 13,
-                                    color: isDark ? Colors.white70 : AppColors.textSecondary,
+                                    color: isDark
+                                        ? Colors.white70
+                                        : AppColors.textSecondary,
                                   ),
                                   children: const [
                                     TextSpan(text: 'Tôi đồng ý với '),
@@ -285,7 +292,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         Text(
                           AppStrings.hasAccount,
                           style: TextStyle(
-                            color: isDark ? Colors.white54 : AppColors.textSecondary,
+                            color: isDark
+                                ? Colors.white54
+                                : AppColors.textSecondary,
                             fontSize: 14,
                           ),
                         ),

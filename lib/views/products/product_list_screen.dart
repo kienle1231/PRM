@@ -37,14 +37,11 @@ class _ProductListScreenState extends State<ProductListScreen> {
     }
 
     final vm = context.read<ProductViewModel>();
-    if (_presetQuery != null) {
-      _searchCtrl.text = _presetQuery!;
-      vm.setSearchQuery(_presetQuery!);
-    }
-    if (_presetCategoryId != null) {
-      vm.filterByCategory(_presetCategoryId);
-    }
-    vm.loadProducts(refresh: true);
+    _searchCtrl.text = _presetQuery ?? '';
+    vm.loadProductList(
+      categoryId: _presetCategoryId,
+      searchQuery: _presetQuery ?? '',
+    );
     if (vm.categories.isEmpty) vm.loadCategories();
   }
 
@@ -120,11 +117,10 @@ class _ProductListScreenState extends State<ProductListScreen> {
             child: TextField(
               controller: _searchCtrl,
               textInputAction: TextInputAction.search,
-              onSubmitted: (q) =>
-                  context.read<ProductViewModel>().search(q),
+              onSubmitted: (q) => context.read<ProductViewModel>().search(q),
               onChanged: context.read<ProductViewModel>().setSearchQuery,
               decoration: InputDecoration(
-                hintText: AppStrings.searchHint,
+                hintText: AppStrings.productSearchHint,
                 prefixIcon: const Icon(Icons.search_rounded, size: 20),
                 suffixIcon: _searchCtrl.text.isNotEmpty
                     ? IconButton(
@@ -135,8 +131,8 @@ class _ProductListScreenState extends State<ProductListScreen> {
                         },
                       )
                     : null,
-                contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16, vertical: 12),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               ),
             ),
           ),
@@ -177,19 +173,18 @@ class _ProductListScreenState extends State<ProductListScreen> {
           Expanded(
             child: Consumer<ProductViewModel>(
               builder: (_, vm, __) {
-                if (vm.isLoading && vm.products.isEmpty) {
+                if (vm.isProductListLoading && vm.products.isEmpty) {
                   return const Center(
                       child:
                           CircularProgressIndicator(color: AppColors.primary));
                 }
-                if (vm.products.isEmpty && !vm.isLoading) {
+                if (vm.products.isEmpty && !vm.isProductListLoading) {
                   return _buildEmptyState(isDark);
                 }
                 return GridView.builder(
                   controller: _scrollCtrl,
                   padding: const EdgeInsets.all(12),
-                  gridDelegate:
-                      const SliverGridDelegateWithFixedCrossAxisCount(
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
                     mainAxisSpacing: 12,
                     crossAxisSpacing: 12,
@@ -271,8 +266,8 @@ class _ProductCardShimmer extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
       ),
       child: const Center(
-        child: CircularProgressIndicator(
-            strokeWidth: 2, color: AppColors.primary),
+        child:
+            CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
       ),
     );
   }

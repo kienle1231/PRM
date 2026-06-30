@@ -1,5 +1,6 @@
-import 'dart:convert';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:path/path.dart' as p;
+import 'package:sqflite/sqflite.dart';
+
 import '../models/cart_item_model.dart';
 
 /// Abstract interface for cart persistence.
@@ -9,60 +10,120 @@ abstract class CartRepository {
   Future<void> clearCart(String userId);
 }
 
-// ── SharedPreferences Implementation ──────────────────────────────────────────
-/// Persists cart data locally using SharedPreferences.
-/// Cart is also synced to Firestore in production.
-class SharedPrefsCartRepository implements CartRepository {
-  static const String _prefix = 'cart_';
+/// Persists cart data locally using SQLite.
+class SQLiteCartRepository implements CartRepository {
+  static const String _databaseName = 'kiencare_cart.db';
+  static const int _databaseVersion = 1;
+  static const String _tableName = 'cart_items';
 
-  String _key(String userId) => '$_prefix$userId';
+  static Database? _database;
+
+  Future<Database> get _db async {
+    if (_database != null) return _database!;
+
+    final dbPath = await getDatabasesPath();
+    final path = p.join(dbPath, _databaseName);
+
+    _database = await openDatabase(
+      path,
+      version: _databaseVersion,
+      onCreate: (db, version) async {
+        await db.execute('''
+          CREATE TABLE $_tableName (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id TEXT NOT NULL,
+            product_id TEXT NOT NULL,
+            name TEXT NOT NULL,
+            price REAL NOT NULL,
+            original_price REAL NOT NULL,
+            image_url TEXT NOT NULL,
+            quantity INTEGER NOT NULL,
+            stock INTEGER NOT NULL,
+            sort_order INTEGER NOT NULL,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            UNIQUE(user_id, product_id)
+          )
+        ''');
+      },
+    );
+
+    return _database!;
+  }
 
   @override
   Future<List<CartItemModel>> getCart(String userId) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final jsonStr = prefs.getString(_key(userId));
-      if (jsonStr == null || jsonStr.isEmpty) return [];
-      final jsonList = jsonDecode(jsonStr) as List;
-      return jsonList
-          .map((e) => CartItemModel.fromJson(e as Map<String, dynamic>))
-          .toList();
-    } catch (_) {
-      return [];
-    }
+    final db = await _db;
+    final rows = await db.query(
+      _tableName,
+      where: 'user_id = ?',
+      whereArgs: [userId],
+      orderBy: 'sort_order ASC, id ASC',
+    );
+
+    return rows.map(_cartItemFromRow).toList();
   }
 
   @override
   Future<void> saveCart(String userId, List<CartItemModel> items) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final jsonStr = jsonEncode(items.map((e) => e.toJson()).toList());
-      await prefs.setString(_key(userId), jsonStr);
+    final db = await _db;
+    final now = DateTime.now().toIso8601String();
 
-      // TODO: Firebase — Sync to Firestore
-      // final batch = FirebaseFirestore.instance.batch();
-      // final cartRef = FirebaseFirestore.instance.collection('cart').doc(userId);
-      // for (final item in items) {
-      //   batch.set(cartRef.collection('items').doc(item.productId), item.toJson());
-      // }
-      // await batch.commit();
-    } catch (_) {
-      // Silent fail — cart still works in memory
-    }
+    await db.transaction((txn) async {
+      await txn.delete(
+        _tableName,
+        where: 'user_id = ?',
+        whereArgs: [userId],
+      );
+
+      for (var index = 0; index < items.length; index++) {
+        final item = items[index];
+        await txn.insert(
+          _tableName,
+          _cartItemToRow(userId, item, now, index),
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+      }
+    });
   }
 
   @override
   Future<void> clearCart(String userId) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.remove(_key(userId));
-
-      // TODO: Firebase — Clear Firestore cart
-      // final docs = await FirebaseFirestore.instance.collection('cart')
-      //     .doc(userId).collection('items').get();
-      // for (final doc in docs.docs) {
-      //   await doc.reference.delete();
-      // }
-    } catch (_) {}
+    final db = await _db;
+    await db.delete(
+      _tableName,
+      where: 'user_id = ?',
+      whereArgs: [userId],
+    );
   }
+
+  Map<String, Object?> _cartItemToRow(
+    String userId,
+    CartItemModel item,
+    String timestamp,
+    int sortOrder,
+  ) =>
+      {
+        'user_id': userId,
+        'product_id': item.productId,
+        'name': item.name,
+        'price': item.price,
+        'original_price': item.originalPrice,
+        'image_url': item.imageUrl,
+        'quantity': item.quantity,
+        'stock': item.stock,
+        'sort_order': sortOrder,
+        'created_at': timestamp,
+        'updated_at': timestamp,
+      };
+
+  CartItemModel _cartItemFromRow(Map<String, Object?> row) => CartItemModel(
+        productId: row['product_id'] as String,
+        name: row['name'] as String,
+        price: (row['price'] as num).toDouble(),
+        originalPrice: (row['original_price'] as num).toDouble(),
+        imageUrl: row['image_url'] as String,
+        quantity: row['quantity'] as int,
+        stock: row['stock'] as int,
+      );
 }

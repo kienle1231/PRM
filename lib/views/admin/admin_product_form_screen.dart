@@ -54,10 +54,6 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
     ('Gaming', 'gaming'),
     ('Văn phòng', 'office'),
     ('Doanh nhân', 'business'),
-    ('Sinh viên', 'student'),
-    ('Đồ họa / Sáng tạo', 'creator'),
-    ('Workstation', 'workstation'),
-    ('Ultrabook', 'ultrabook'),
     ('Laptop 2-in-1', 'convertible'),
   ];
 

@@ -15,8 +15,8 @@ class WishlistProvider extends ChangeNotifier {
   bool _isLoading = false;
   String? _errorMessage;
 
-  // Default User ID (for demo/session purposes)
-  static const int _defaultUserId = 1;
+  static const int _fallbackUserId = 1;
+  int _activeUserId = _fallbackUserId;
 
   /// Cached list of wishlist items.
   List<WishlistModel> get wishlist => _wishlistItems;
@@ -30,16 +30,36 @@ class WishlistProvider extends ChangeNotifier {
   /// Returns error message if any database operation fails.
   String? get errorMessage => _errorMessage;
 
+  Future<void> setActiveUser(String? firebaseUid) async {
+    final nextUserId = _localUserId(firebaseUid);
+    if (nextUserId == _activeUserId && _wishlistItems.isNotEmpty) return;
+
+    _activeUserId = nextUserId;
+    await loadWishlist();
+  }
+
+  int _localUserId(String? firebaseUid) {
+    if (firebaseUid == null || firebaseUid.isEmpty) return _fallbackUserId;
+
+    var hash = 0x811C9DC5;
+    for (final unit in firebaseUid.codeUnits) {
+      hash ^= unit;
+      hash = (hash * 0x01000193) & 0x7fffffff;
+    }
+    return hash == 0 ? _fallbackUserId : hash;
+  }
+
   /// Load wishlist from SQLite database into memory cache.
-  Future<void> loadWishlist({int userId = _defaultUserId}) async {
+  Future<void> loadWishlist({int? userId}) async {
+    final effectiveUserId = userId ?? _activeUserId;
     _isLoading = true;
     _errorMessage = null;
-    // Don't call notifyListeners() here if we want to avoid extra rebuilds, 
+    // Don't call notifyListeners() here if we want to avoid extra rebuilds,
     // but doing so once is safe to show loading indicators.
     notifyListeners();
 
     try {
-      _wishlistItems = await _dbService.getWishlist(userId);
+      _wishlistItems = await _dbService.getWishlist(effectiveUserId);
       _errorMessage = null;
     } catch (e) {
       _errorMessage = 'Something went wrong. Please try again.';
@@ -51,15 +71,16 @@ class WishlistProvider extends ChangeNotifier {
   }
 
   /// Add a product to the wishlist database and memory cache.
-  Future<void> addToWishlist(ProductModel product, {int userId = _defaultUserId}) async {
+  Future<void> addToWishlist(ProductModel product, {int? userId}) async {
+    final effectiveUserId = userId ?? _activeUserId;
     _errorMessage = null;
-    
+
     // Check if already in wishlist in memory to avoid duplicate database writes
     if (_wishlistItems.any((item) => item.productId == product.id)) {
       return;
     }
 
-    final newItem = WishlistModel.fromProduct(product, userId: userId);
+    final newItem = WishlistModel.fromProduct(product, userId: effectiveUserId);
 
     // Optimistic UI Update: add to cache immediately for responsive feel
     _wishlistItems.insert(0, newItem);
@@ -77,10 +98,12 @@ class WishlistProvider extends ChangeNotifier {
   }
 
   /// Remove a product from the wishlist database and memory cache.
-  Future<void> removeFromWishlist(String productId, {int userId = _defaultUserId}) async {
+  Future<void> removeFromWishlist(String productId, {int? userId}) async {
+    final effectiveUserId = userId ?? _activeUserId;
     _errorMessage = null;
 
-    final index = _wishlistItems.indexWhere((item) => item.productId == productId);
+    final index =
+        _wishlistItems.indexWhere((item) => item.productId == productId);
     if (index == -1) return;
 
     // Save removed item for possible rollback
@@ -91,7 +114,7 @@ class WishlistProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      await _dbService.deleteWishlist(productId);
+      await _dbService.deleteWishlist(productId, effectiveUserId);
     } catch (e) {
       // Rollback cache on database failure
       if (index <= _wishlistItems.length) {
@@ -112,7 +135,8 @@ class WishlistProvider extends ChangeNotifier {
   }
 
   /// Clear the entire wishlist database and memory cache.
-  Future<void> clearWishlist({int userId = _defaultUserId}) async {
+  Future<void> clearWishlist({int? userId}) async {
+    final effectiveUserId = userId ?? _activeUserId;
     _errorMessage = null;
     final originalItems = List<WishlistModel>.from(_wishlistItems);
 
@@ -120,7 +144,7 @@ class WishlistProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      await _dbService.clearWishlist(userId);
+      await _dbService.clearWishlist(effectiveUserId);
     } catch (e) {
       // Rollback cache on database failure
       _wishlistItems = originalItems;

@@ -10,7 +10,8 @@ import '../models/wishlist_model.dart';
 /// Implemented as a Singleton with a SharedPreferences fallback on the Web platform.
 class WishlistDatabaseService {
   // Singleton instance
-  static final WishlistDatabaseService _instance = WishlistDatabaseService._internal();
+  static final WishlistDatabaseService _instance =
+      WishlistDatabaseService._internal();
 
   factory WishlistDatabaseService() => _instance;
 
@@ -23,7 +24,8 @@ class WishlistDatabaseService {
   /// Note: Throws UnsupportedError if called on the Web platform.
   Future<Database> get database async {
     if (kIsWeb) {
-      throw UnsupportedError('SQLite is not supported on the Web. SharedPreferences fallback is used instead.');
+      throw UnsupportedError(
+          'SQLite is not supported on the Web. SharedPreferences fallback is used instead.');
     }
     if (_database != null) return _database!;
     _database = await initDatabase();
@@ -38,8 +40,9 @@ class WishlistDatabaseService {
 
       return await openDatabase(
         path,
-        version: 1,
+        version: 2,
         onCreate: _onCreate,
+        onUpgrade: _onUpgrade,
       );
     } catch (e) {
       debugPrint('[WishlistDB] Error initializing database: $e');
@@ -52,16 +55,47 @@ class WishlistDatabaseService {
     await db.execute('''
       CREATE TABLE wishlist (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER,
-        product_id TEXT UNIQUE,
+        user_id INTEGER NOT NULL,
+        product_id TEXT NOT NULL,
         product_name TEXT,
         product_image TEXT,
         price REAL,
         rating REAL,
-        created_at TEXT
+        created_at TEXT,
+        UNIQUE(user_id, product_id)
       )
     ''');
     debugPrint('[WishlistDB] Database table created successfully.');
+  }
+
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion >= 2) return;
+
+    await db.execute('ALTER TABLE wishlist RENAME TO wishlist_old');
+    await _onCreate(db, newVersion);
+    await db.execute('''
+      INSERT OR IGNORE INTO wishlist (
+        id,
+        user_id,
+        product_id,
+        product_name,
+        product_image,
+        price,
+        rating,
+        created_at
+      )
+      SELECT
+        id,
+        COALESCE(user_id, 1),
+        product_id,
+        product_name,
+        product_image,
+        price,
+        rating,
+        created_at
+      FROM wishlist_old
+    ''');
+    await db.execute('DROP TABLE wishlist_old');
   }
 
   // ── Web Fallback (SharedPreferences) Helpers ─────────────────────────────────
@@ -71,15 +105,18 @@ class WishlistDatabaseService {
     final key = '$_webPrefsKeyPrefix$userId';
     final List<String>? jsonList = prefs.getStringList(key);
     if (jsonList == null) return [];
-    return jsonList.map((item) {
-      try {
-        final Map<String, dynamic> map = jsonDecode(item);
-        return WishlistModel.fromMap(map);
-      } catch (e) {
-        debugPrint('[WishlistDB] Error decoding web item: $e');
-        return null;
-      }
-    }).whereType<WishlistModel>().toList();
+    return jsonList
+        .map((item) {
+          try {
+            final Map<String, dynamic> map = jsonDecode(item);
+            return WishlistModel.fromMap(map);
+          } catch (e) {
+            debugPrint('[WishlistDB] Error decoding web item: $e');
+            return null;
+          }
+        })
+        .whereType<WishlistModel>()
+        .toList();
   }
 
   Future<void> _saveWebWishlist(int userId, List<WishlistModel> list) async {
@@ -122,10 +159,9 @@ class WishlistDatabaseService {
   }
 
   /// Delete a product from the wishlist by its product_id.
-  Future<int> deleteWishlist(String productId) async {
+  Future<int> deleteWishlist(String productId, int userId) async {
     if (kIsWeb) {
       try {
-        const userId = 1; // Default web user ID
         final list = await _getWebWishlist(userId);
         final initialLength = list.length;
         list.removeWhere((item) => item.productId == productId);
@@ -144,8 +180,8 @@ class WishlistDatabaseService {
       final db = await database;
       return await db.delete(
         'wishlist',
-        where: 'product_id = ?',
-        whereArgs: [productId],
+        where: 'user_id = ? AND product_id = ?',
+        whereArgs: [userId, productId],
       );
     } catch (e) {
       debugPrint('[WishlistDB] SQLite error deleting: $e');
@@ -181,10 +217,9 @@ class WishlistDatabaseService {
   }
 
   /// Check if a product exists in the wishlist.
-  Future<bool> checkFavorite(String productId) async {
+  Future<bool> checkFavorite(String productId, int userId) async {
     if (kIsWeb) {
       try {
-        const userId = 1;
         final list = await _getWebWishlist(userId);
         return list.any((item) => item.productId == productId);
       } catch (e) {
@@ -197,8 +232,8 @@ class WishlistDatabaseService {
       final db = await database;
       final List<Map<String, dynamic>> result = await db.query(
         'wishlist',
-        where: 'product_id = ?',
-        whereArgs: [productId],
+        where: 'user_id = ? AND product_id = ?',
+        whereArgs: [userId, productId],
         limit: 1,
       );
       return result.isNotEmpty;

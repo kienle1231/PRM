@@ -34,6 +34,7 @@ class ProductViewModel extends ChangeNotifier {
   SortOption _sortOption = SortOption.newest;
 
   bool _isLoading = false;
+  bool _isProductListLoading = false;
   bool _isLoadingMore = false;
   bool _hasMore = true;
   int _currentPage = 1;
@@ -56,6 +57,7 @@ class ProductViewModel extends ChangeNotifier {
   String get searchQuery => _searchQuery;
   SortOption get sortOption => _sortOption;
   bool get isLoading => _isLoading;
+  bool get isProductListLoading => _isProductListLoading;
   bool get isLoadingMore => _isLoadingMore;
   bool get hasMore => _hasMore;
   String? get error => _error;
@@ -85,7 +87,7 @@ class ProductViewModel extends ChangeNotifier {
 
   // ── Load Products (with pagination) ───────────────────────────────────────
   Future<void> loadProducts({bool refresh = false}) async {
-    if (_isLoading) return;
+    if (_isProductListLoading || _isLoadingMore) return;
     if (refresh) {
       _currentPage = 1;
       _products = [];
@@ -93,7 +95,7 @@ class ProductViewModel extends ChangeNotifier {
     }
     if (!_hasMore) return;
 
-    _isLoading = refresh;
+    _isProductListLoading = refresh;
     _isLoadingMore = !refresh;
     _error = null;
     notifyListeners();
@@ -117,10 +119,21 @@ class ProductViewModel extends ChangeNotifier {
     } catch (e) {
       _error = 'Không thể tải sản phẩm';
     } finally {
-      _isLoading = false;
+      _isProductListLoading = false;
       _isLoadingMore = false;
       notifyListeners();
     }
+  }
+
+  /// Opens the product listing with a clean, explicit search/filter state.
+  /// When no category or query is provided, all products are loaded.
+  Future<void> loadProductList({
+    String? categoryId,
+    String searchQuery = '',
+  }) async {
+    _selectedCategoryId = categoryId;
+    _searchQuery = searchQuery.trim();
+    await loadProducts(refresh: true);
   }
 
   /// Load next page of products.
