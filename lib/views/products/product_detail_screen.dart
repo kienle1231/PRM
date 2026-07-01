@@ -32,8 +32,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final productId =
-          ModalRoute.of(context)?.settings.arguments as String?;
+      final productId = ModalRoute.of(context)?.settings.arguments as String?;
       if (productId != null) {
         context.read<ProductViewModel>().loadProductDetail(productId);
       }
@@ -73,8 +72,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
         action: SnackBarAction(
           label: 'Xem giỏ',
           textColor: Colors.white,
-          onPressed: () =>
-              Navigator.pushNamed(context, AppRoutes.cart),
+          onPressed: () => Navigator.pushNamed(context, AppRoutes.cart),
         ),
       ),
     );
@@ -105,8 +103,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
               SliverAppBar(
                 pinned: true,
                 expandedHeight: 300,
-                backgroundColor:
-                    isDark ? AppColors.surfaceDark : Colors.white,
+                backgroundColor: isDark ? AppColors.surfaceDark : Colors.white,
                 flexibleSpace: FlexibleSpaceBar(
                   background: Stack(
                     children: [
@@ -359,7 +356,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                         labelColor: AppColors.primary,
                         unselectedLabelColor: AppColors.textSecondary,
                         indicatorColor: AppColors.primary,
-                        labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                        labelStyle: const TextStyle(
+                            fontWeight: FontWeight.w700, fontSize: 14),
                         tabs: const [
                           Tab(text: AppStrings.description),
                           Tab(text: AppStrings.specifications),
@@ -403,17 +401,16 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                         ),
                         const SizedBox(height: 12),
                         SizedBox(
-                          height: 265,
+                          height: ProductCard.cardHeight,
                           child: ListView.builder(
                             scrollDirection: Axis.horizontal,
                             itemCount: vm.relatedProducts.length,
                             itemBuilder: (_, i) => SizedBox(
                               width: 160,
                               child: Padding(
-                                padding:
-                                    const EdgeInsets.only(right: 12),
-                                child: ProductCard(
-                                    product: vm.relatedProducts[i]),
+                                padding: const EdgeInsets.only(right: 12),
+                                child:
+                                    ProductCard(product: vm.relatedProducts[i]),
                               ),
                             ),
                           ),
@@ -436,9 +433,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                 color: isDark ? AppColors.surfaceDark : Colors.white,
                 border: Border(
                   top: BorderSide(
-                    color: isDark
-                        ? AppColors.borderDark
-                        : AppColors.borderLight,
+                    color:
+                        isDark ? AppColors.borderDark : AppColors.borderLight,
                   ),
                 ),
               ),
@@ -454,8 +450,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10)),
                     ),
-                    child: const Icon(Icons.chat_bubble_outline_rounded,
-                        size: 22),
+                    child:
+                        const Icon(Icons.chat_bubble_outline_rounded, size: 22),
                   ),
                   const SizedBox(width: 12),
 
@@ -465,10 +461,12 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                       onPressed: product.inStock
                           ? () => _addToCart(product, cartVM)
                           : null,
-                      icon: const Icon(Icons.add_shopping_cart_rounded, size: 18),
+                      icon:
+                          const Icon(Icons.add_shopping_cart_rounded, size: 18),
                       label: Text(
                         product.inStock ? 'Thêm giỏ' : 'Hết hàng',
-                        style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                        style: const TextStyle(
+                            fontWeight: FontWeight.w700, fontSize: 13),
                       ),
                       style: OutlinedButton.styleFrom(
                         minimumSize: const Size(0, 52),
@@ -494,7 +492,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                                 quantity: _quantity,
                                 stock: product.stock,
                               );
-                              Navigator.pushNamed(context, AppRoutes.checkout, arguments: [singleItem]);
+                              Navigator.pushNamed(context, AppRoutes.checkout,
+                                  arguments: [singleItem]);
                             }
                           : null,
                       style: ElevatedButton.styleFrom(
@@ -503,7 +502,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                       ),
                       child: Text(
                         product.inStock ? 'Mua ngay' : 'Hết hàng',
-                        style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: Colors.white),
+                        style: const TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 14,
+                            color: Colors.white),
                       ),
                     ),
                   ),
@@ -535,20 +537,16 @@ class _QuantitySelector extends StatelessWidget {
     return Row(
       children: [
         _QtyButton(
-            icon: Icons.remove,
-            onTap: quantity > 1 ? onDecrement : null),
+            icon: Icons.remove, onTap: quantity > 1 ? onDecrement : null),
         Container(
           width: 44,
           alignment: Alignment.center,
           child: Text(
             '$quantity',
-            style:
-                const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
           ),
         ),
-        _QtyButton(
-            icon: Icons.add,
-            onTap: quantity < max ? onIncrement : null),
+        _QtyButton(icon: Icons.add, onTap: quantity < max ? onIncrement : null),
       ],
     );
   }
@@ -568,7 +566,8 @@ class _QtyButton extends StatelessWidget {
         width: 36,
         height: 36,
         decoration: BoxDecoration(
-          color: onTap != null ? AppColors.primarySurface : Colors.grey.shade200,
+          color:
+              onTap != null ? AppColors.primarySurface : Colors.grey.shade200,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
             color: onTap != null ? AppColors.primary : Colors.grey.shade300,
@@ -599,7 +598,10 @@ class _SpecsTable extends StatelessWidget {
     }
     return SingleChildScrollView(
       child: Column(
-        children: specs.entries.map((e) => _SpecRow(key: ValueKey(e.key), label: e.key, value: e.value)).toList(),
+        children: specs.entries
+            .map((e) =>
+                _SpecRow(key: ValueKey(e.key), label: e.key, value: e.value))
+            .toList(),
       ),
     );
   }

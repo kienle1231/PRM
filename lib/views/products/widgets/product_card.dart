@@ -10,6 +10,8 @@ import '../../../../widgets/favorite_button.dart';
 
 /// Product card for grid and list displays.
 class ProductCard extends StatelessWidget {
+  static const double cardHeight = 268;
+
   final ProductModel product;
 
   const ProductCard({super.key, required this.product});
@@ -56,26 +58,34 @@ class ProductCard extends StatelessWidget {
                   mainAxisSize: MainAxisSize.max,
                   children: [
                     // Category
-                    Text(
-                      product.categoryName,
-                      style: const TextStyle(
-                        fontSize: 10,
-                        color: AppColors.textHint,
-                        fontWeight: FontWeight.w500,
+                    SizedBox(
+                      height: 14,
+                      child: Text(
+                        product.categoryName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 10,
+                          color: AppColors.textHint,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 2),
 
                     // Name
-                    Text(
-                      product.name,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: isDark ? Colors.white : AppColors.textPrimary,
-                        height: 1.3,
+                    SizedBox(
+                      height: 32,
+                      child: Text(
+                        product.name,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: isDark ? Colors.white : AppColors.textPrimary,
+                          height: 1.3,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -84,34 +94,47 @@ class ProductCard extends StatelessWidget {
                     _CompactSpecs(product: product),
                     const SizedBox(height: 4),
 
-                    // Original Price (strikethrough)
-                    if (product.hasDiscount)
-                      Text(
-                        AppFormatters.vnd(product.originalPrice),
-                        style: const TextStyle(
-                          fontSize: 10,
-                          color: AppColors.textHint,
-                          decoration: TextDecoration.lineThrough,
-                        ),
-                      ),
+                    const Spacer(),
+
+                    // Reserve the same price space for discounted and
+                    // non-discounted products so the sale rows stay aligned.
+                    SizedBox(
+                      height: 14,
+                      child: product.hasDiscount
+                          ? Text(
+                              AppFormatters.vnd(product.originalPrice),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 10,
+                                color: AppColors.textHint,
+                                decoration: TextDecoration.lineThrough,
+                              ),
+                            )
+                          : null,
+                    ),
 
                     // Sale Price
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            AppFormatters.vnd(product.price),
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w800,
-                              color: AppColors.secondary,
+                    SizedBox(
+                      height: 36,
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              AppFormatters.vnd(product.price),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w800,
+                                color: AppColors.secondary,
+                              ),
                             ),
                           ),
-                        ),
-                        // Add to cart button
-                        _AddToCartButton(product: product),
-                      ],
+                          _AddToCartButton(product: product),
+                        ],
+                      ),
                     ),
                   ],
                 ),
@@ -154,8 +177,8 @@ class _ProductImage extends StatelessWidget {
               height: 120,
               color: AppColors.primarySurface,
               child: const Center(
-                child:
-                    Icon(Icons.image_not_supported_outlined, color: AppColors.textHint),
+                child: Icon(Icons.image_not_supported_outlined,
+                    color: AppColors.textHint),
               ),
             ),
           ),
@@ -251,7 +274,8 @@ class _AddToCartButton extends StatelessWidget {
                       ScaffoldMessenger.of(context).hideCurrentSnackBar();
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text('Đã đạt tối đa ${product.stock} trong kho'),
+                          content:
+                              Text('Đã đạt tối đa ${product.stock} trong kho'),
                           backgroundColor: AppColors.error,
                           duration: const Duration(seconds: 2),
                           behavior: SnackBarBehavior.floating,
@@ -277,7 +301,9 @@ class _AddToCartButton extends StatelessWidget {
             child: Icon(
               atStockLimit
                   ? Icons.block_rounded
-                  : (inCart ? Icons.check_rounded : Icons.add_shopping_cart_rounded),
+                  : (inCart
+                      ? Icons.check_rounded
+                      : Icons.add_shopping_cart_rounded),
               color: Colors.white,
               size: 16,
             ),
@@ -312,8 +338,7 @@ class _CompactSpecs extends StatelessWidget {
   Widget build(BuildContext context) {
     final cpu = _abbrevCpu(product.cpu);
     final ram = '${product.ramGB}GB';
-    final storage =
-        '${product.storage.capacityGB}GB ${product.storage.type}';
+    final storage = '${product.storage.capacityGB}GB ${product.storage.type}';
     final gpu = _abbrevGpu(product.gpu);
     final display = '${product.display.sizeInch}"';
 
@@ -323,22 +348,25 @@ class _CompactSpecs extends StatelessWidget {
       height: 1.4,
     );
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          '$cpu • $ram • $storage',
-          style: style,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-        Text(
-          '$gpu • $display',
-          style: style,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-      ],
+    return SizedBox(
+      height: 26,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '$cpu • $ram • $storage',
+            style: style,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          Text(
+            '$gpu • $display',
+            style: style,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
     );
   }
 }

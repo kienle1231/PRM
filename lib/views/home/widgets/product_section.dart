@@ -47,7 +47,7 @@ class ProductSection extends StatelessWidget {
 
         // Horizontal product scroll
         SizedBox(
-          height: 268,
+          height: ProductCard.cardHeight,
           child: ListView.builder(
             padding: const EdgeInsets.symmetric(horizontal: 12),
             scrollDirection: Axis.horizontal,
