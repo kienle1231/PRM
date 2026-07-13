@@ -27,6 +27,19 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     });
   }
 
+  void _goBack() {
+    if (Navigator.canPop(context)) {
+      Navigator.pop(context);
+      return;
+    }
+
+    Navigator.pushReplacementNamed(
+      context,
+      AppRoutes.main,
+      arguments: 4,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -50,19 +63,24 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             slivers: [
               // ── Premium Header ────────────────────────────────────────────
               SliverAppBar(
-                expandedHeight: 160,
+                expandedHeight: 220,
                 pinned: true,
                 backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
                 leading: IconButton(
                   icon: const Icon(Icons.arrow_back_ios_new_rounded),
-                  onPressed: () => Navigator.pop(context),
+                  onPressed: _goBack,
+                  tooltip: 'Quay lại',
                 ),
                 flexibleSpace: FlexibleSpaceBar(
                   background: Container(
                     decoration: const BoxDecoration(
                       gradient: LinearGradient(
-                        colors: [Color(0xFF1A1A2E), Color(0xFF16213E), Color(0xFF0F3460)],
+                        colors: [
+                          Color(0xFF1A1A2E),
+                          Color(0xFF16213E),
+                          Color(0xFF0F3460)
+                        ],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
@@ -90,7 +108,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                             height: 80,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: AppColors.secondary.withValues(alpha: 0.15),
+                              color:
+                                  AppColors.secondary.withValues(alpha: 0.15),
                             ),
                           ),
                         ),
@@ -105,11 +124,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                   Container(
                                     padding: const EdgeInsets.all(8),
                                     decoration: BoxDecoration(
-                                      color: AppColors.secondary.withValues(alpha: 0.2),
+                                      color: AppColors.secondary
+                                          .withValues(alpha: 0.2),
                                       borderRadius: BorderRadius.circular(10),
                                     ),
-                                    child: const Icon(Icons.admin_panel_settings_rounded,
-                                        color: AppColors.secondary, size: 20),
+                                    child: const Icon(
+                                        Icons.admin_panel_settings_rounded,
+                                        color: AppColors.secondary,
+                                        size: 20),
                                   ),
                                   const SizedBox(width: 10),
                                   const Text(
@@ -128,6 +150,27 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                 style: TextStyle(
                                   color: Colors.white.withValues(alpha: 0.6),
                                   fontSize: 13,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              TextButton.icon(
+                                onPressed: _goBack,
+                                icon: const Icon(
+                                  Icons.arrow_back_rounded,
+                                  size: 16,
+                                ),
+                                label: const Text('Quay lại'),
+                                style: TextButton.styleFrom(
+                                  foregroundColor: Colors.white,
+                                  backgroundColor:
+                                      Colors.white.withValues(alpha: 0.12),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 6,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
                                 ),
                               ),
                             ],
@@ -273,7 +316,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                             ),
-                            onTap: () => Navigator.pushNamed(context, AppRoutes.adminProducts),
+                            onTap: () => Navigator.pushNamed(
+                                context, AppRoutes.adminProducts),
                           ),
                           _MenuCard(
                             icon: Icons.receipt_long_rounded,
@@ -284,7 +328,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                             ),
-                            onTap: () => Navigator.pushNamed(context, AppRoutes.adminOrders),
+                            onTap: () => Navigator.pushNamed(
+                                context, AppRoutes.adminOrders),
                           ),
                           _MenuCard(
                             icon: Icons.bar_chart_rounded,
@@ -295,7 +340,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                             ),
-                            onTap: () => Navigator.pushNamed(context, AppRoutes.adminRevenue),
+                            onTap: () => Navigator.pushNamed(
+                                context, AppRoutes.adminRevenue),
                           ),
                           _MenuCard(
                             icon: Icons.people_alt_rounded,
@@ -306,7 +352,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                             ),
-                            onTap: () => Navigator.pushNamed(context, AppRoutes.adminUsers),
+                            onTap: () => Navigator.pushNamed(
+                                context, AppRoutes.adminUsers),
                           ),
                           _MenuCard(
                             icon: Icons.refresh_rounded,
@@ -319,7 +366,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                             ),
                             onTap: () {
                               context.read<OrderViewModel>().fetchAllOrders();
-                              context.read<ProductViewModel>().loadAdminProducts();
+                              context
+                                  .read<ProductViewModel>()
+                                  .loadAdminProducts();
                               context.read<UserAdminViewModel>().loadUsers();
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
@@ -358,14 +407,16 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                               ),
                             ),
                             TextButton(
-                              onPressed: () =>
-                                  Navigator.pushNamed(context, AppRoutes.adminOrders),
+                              onPressed: () => Navigator.pushNamed(
+                                  context, AppRoutes.adminOrders),
                               child: const Text('Xem tất cả'),
                             ),
                           ],
                         ),
                         const SizedBox(height: 10),
-                        ...orders.take(3).map((o) => _RecentOrderTile(order: o)),
+                        ...orders
+                            .take(3)
+                            .map((o) => _RecentOrderTile(order: o)),
                       ],
                     ),
                   ),
@@ -495,7 +546,8 @@ class _MenuCard extends StatelessWidget {
             Positioned(
               right: -10,
               bottom: -10,
-              child: Icon(icon, size: 70, color: Colors.white.withValues(alpha: 0.12)),
+              child: Icon(icon,
+                  size: 70, color: Colors.white.withValues(alpha: 0.12)),
             ),
             Padding(
               padding: const EdgeInsets.all(16),
@@ -580,7 +632,8 @@ class _RecentOrderTile extends StatelessWidget {
               borderRadius: BorderRadius.circular(10),
             ),
             alignment: Alignment.center,
-            child: Text(order.status.icon, style: const TextStyle(fontSize: 18)),
+            child:
+                Text(order.status.icon, style: const TextStyle(fontSize: 18)),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -589,11 +642,13 @@ class _RecentOrderTile extends StatelessWidget {
               children: [
                 Text(
                   order.customerName,
-                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                  style: const TextStyle(
+                      fontWeight: FontWeight.w600, fontSize: 13),
                 ),
                 Text(
                   '#${order.id.substring(0, order.id.length.clamp(0, 8))}',
-                  style: const TextStyle(color: AppColors.textSecondary, fontSize: 11),
+                  style: const TextStyle(
+                      color: AppColors.textSecondary, fontSize: 11),
                 ),
               ],
             ),
