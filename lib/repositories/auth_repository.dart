@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:path/path.dart' as p;
 import 'package:sqflite/sqflite.dart';
@@ -38,13 +39,17 @@ class AuthFailure implements Exception {
 class FirebaseAuthRepository implements AuthRepository {
   FirebaseAuthRepository({
     FirebaseAuth? auth,
-  }) : _auth = auth ?? FirebaseAuth.instance;
+    FirebaseFirestore? firestore,
+  })  : _auth = auth ?? FirebaseAuth.instance,
+        _firestore = firestore ?? FirebaseFirestore.instance;
 
   final FirebaseAuth _auth;
+  final FirebaseFirestore _firestore;
 
   static const String _databaseName = 'kiencare_auth.db';
-  static const int _databaseVersion = 1;
+  static const int _databaseVersion = 2;
   static const String _profilesTable = 'user_profiles';
+  static const Set<String> _adminEmails = {'admin@kiencare.vn'};
 
   static Database? _database;
 
@@ -57,25 +62,50 @@ class FirebaseAuthRepository implements AuthRepository {
     _database = await openDatabase(
       path,
       version: _databaseVersion,
-      onCreate: (db, version) async {
-        await db.execute('''
-          CREATE TABLE $_profilesTable (
-            user_id TEXT PRIMARY KEY,
-            name TEXT NOT NULL,
-            email TEXT NOT NULL,
-            phone TEXT NOT NULL,
-            avatar TEXT,
-            role TEXT NOT NULL,
-            is_disabled INTEGER NOT NULL,
-            created_at TEXT NOT NULL,
-            profile_json TEXT NOT NULL,
-            updated_at TEXT NOT NULL
-          )
-        ''');
-      },
+      onCreate: (db, version) => _createTable(db),
+      onUpgrade: _onUpgrade,
     );
 
     return _database!;
+  }
+
+  Future<void> _createTable(DatabaseExecutor db) => db.execute('''
+        CREATE TABLE $_profilesTable (
+          user_id TEXT NOT NULL PRIMARY KEY CHECK(length(trim(user_id)) > 0),
+          name TEXT NOT NULL,
+          email TEXT NOT NULL COLLATE NOCASE UNIQUE,
+          phone TEXT NOT NULL,
+          avatar TEXT,
+          role TEXT NOT NULL DEFAULT 'user' CHECK(role IN ('user', 'admin')),
+          is_disabled INTEGER NOT NULL DEFAULT 0
+            CHECK(is_disabled IN (0, 1)),
+          created_at TEXT NOT NULL,
+          profile_json TEXT NOT NULL,
+          updated_at TEXT NOT NULL
+        )
+      ''');
+
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion >= 2) return;
+
+    await db.execute(
+      'ALTER TABLE $_profilesTable RENAME TO ${_profilesTable}_old',
+    );
+    await _createTable(db);
+    await db.execute('''
+      INSERT OR IGNORE INTO $_profilesTable (
+        user_id, name, email, phone, avatar, role, is_disabled, created_at,
+        profile_json, updated_at
+      )
+      SELECT
+        user_id, name, email, phone, avatar,
+        CASE WHEN role = 'admin' THEN 'admin' ELSE 'user' END,
+        CASE WHEN is_disabled = 1 THEN 1 ELSE 0 END,
+        created_at, profile_json, updated_at
+      FROM ${_profilesTable}_old
+      WHERE trim(user_id) <> ''
+    ''');
+    await db.execute('DROP TABLE ${_profilesTable}_old');
   }
 
   @override
@@ -121,9 +151,11 @@ class FirebaseAuthRepository implements AuthRepository {
         email: refreshedUser.email ?? email,
         phone: phone,
         avatar: refreshedUser.photoURL,
+        role: _roleForEmail(refreshedUser.email ?? email),
         createdAt: refreshedUser.metadata.creationTime ?? DateTime.now(),
       );
       await _saveProfile(user);
+      await _syncFirestoreProfile(user);
       return user;
     } on FirebaseAuthException catch (error) {
       throw AuthFailure(_messageFor(error));
@@ -169,8 +201,10 @@ class FirebaseAuthRepository implements AuthRepository {
       if (updatedUser.avatar != firebaseUser.photoURL) {
         await firebaseUser.updatePhotoURL(updatedUser.avatar);
       }
-      await _saveProfile(updatedUser);
-      return updatedUser;
+      final resolvedUser = _withResolvedRole(updatedUser);
+      await _saveProfile(resolvedUser);
+      await _syncFirestoreProfile(resolvedUser);
+      return resolvedUser;
     } on FirebaseAuthException catch (error) {
       throw AuthFailure(_messageFor(error));
     }
@@ -179,19 +213,57 @@ class FirebaseAuthRepository implements AuthRepository {
   Future<UserModel> _toUserModel(User user) async {
     final storedProfile = await _getStoredProfile(user.uid);
 
-    return UserModel(
+    final resolvedUser = UserModel(
       id: user.uid,
       name: storedProfile?.name ?? user.displayName ?? '',
       email: user.email ?? storedProfile?.email ?? '',
       phone: storedProfile?.phone ?? user.phoneNumber ?? '',
       avatar: storedProfile?.avatar ?? user.photoURL,
       addresses: storedProfile?.addresses ?? [],
-      role: storedProfile?.role ?? 'user',
+      role: _resolveRole(user.email ?? storedProfile?.email ?? ''),
       isDisabled: storedProfile?.isDisabled ?? false,
       createdAt: user.metadata.creationTime ??
           storedProfile?.createdAt ??
           DateTime.now(),
     );
+    await _saveProfile(resolvedUser);
+    await _syncFirestoreProfile(resolvedUser);
+    return resolvedUser;
+  }
+
+  UserModel _withResolvedRole(UserModel user) => user.copyWith(
+        role: _resolveRole(user.email),
+      );
+
+  String _resolveRole(String email) {
+    if (_isAdminEmail(email)) return 'admin';
+    return 'user';
+  }
+
+  String _roleForEmail(String email) => _isAdminEmail(email) ? 'admin' : 'user';
+
+  bool _isAdminEmail(String email) =>
+      _adminEmails.contains(email.trim().toLowerCase());
+
+  Future<void> _syncFirestoreProfile(UserModel user) async {
+    try {
+      await _firestore.collection('users').doc(user.id).set(
+        {
+          'name': user.name,
+          'email': user.email,
+          'phone': user.phone,
+          'avatar': user.avatar,
+          'role': user.role,
+          'isDisabled': user.isDisabled,
+          'createdAt': Timestamp.fromDate(user.createdAt),
+          'updatedAt': FieldValue.serverTimestamp(),
+        },
+        SetOptions(merge: true),
+      );
+    } catch (_) {
+      // Firestore sync shares role data across devices, but auth should still
+      // work while offline or before the latest rules are deployed.
+    }
   }
 
   Future<void> _saveProfile(UserModel user) async {
@@ -289,7 +361,7 @@ class MockAuthRepository implements AuthRepository {
         email: 'demo@kiencare.vn',
         phone: '0912345678',
         addresses: [
-          AddressModel(
+          const AddressModel(
             id: 'addr_1',
             name: 'Nguyễn Văn An',
             phone: '0912345678',
@@ -312,7 +384,7 @@ class MockAuthRepository implements AuthRepository {
         phone: '0988888888',
         role: 'admin',
         addresses: [
-          AddressModel(
+          const AddressModel(
             id: 'addr_2',
             name: 'Quản trị viên',
             phone: '0988888888',

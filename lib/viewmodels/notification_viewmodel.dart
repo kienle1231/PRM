@@ -5,7 +5,7 @@ import '../repositories/notification_repository.dart';
 
 /// Manages notification state and unread count badge.
 class NotificationViewModel extends ChangeNotifier {
-  final MockNotificationRepository _repo;
+  final NotificationRepository _repo;
 
   List<NotificationModel> _notifications = [];
   bool _isLoading = false;
@@ -50,7 +50,8 @@ class NotificationViewModel extends ChangeNotifier {
 
   Future<void> markAllAsRead() async {
     if (_userId == null) return;
-    _notifications = _notifications.map((n) => n.copyWith(isRead: true)).toList();
+    _notifications =
+        _notifications.map((n) => n.copyWith(isRead: true)).toList();
     notifyListeners();
     await _repo.markAllAsRead(_userId!);
   }
@@ -71,7 +72,8 @@ class NotificationViewModel extends ChangeNotifier {
     final notification = NotificationModel(
       id: const Uuid().v4(),
       title: '✅ Đơn hàng $orderDisplayId đã được xác nhận',
-      body: 'Chúng tôi đã nhận được đơn hàng của bạn và đang xử lý. Cảm ơn bạn đã mua sắm tại LAPTOPHUB!',
+      body:
+          'Chúng tôi đã nhận được đơn hàng của bạn và đang xử lý. Cảm ơn bạn đã mua sắm tại LAPTOPHUB!',
       type: NotificationType.order,
       isRead: false,
       route: '/orders',
@@ -90,7 +92,8 @@ class NotificationViewModel extends ChangeNotifier {
     final notification = NotificationModel(
       id: const Uuid().v4(),
       title: '🔥 Flash Sale - $productName giảm $discountPercent%',
-      body: 'Ưu đãi giới hạn! Nhanh tay sở hữu $productName với mức giảm $discountPercent% chỉ hôm nay.',
+      body:
+          'Ưu đãi giới hạn! Nhanh tay sở hữu $productName với mức giảm $discountPercent% chỉ hôm nay.',
       type: NotificationType.promotion,
       isRead: false,
       route: '/product-detail',

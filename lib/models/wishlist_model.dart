@@ -3,7 +3,7 @@ import 'product_model.dart';
 /// Model representing a product added to the user's local wishlist.
 class WishlistModel {
   final int? id;
-  final int? userId;
+  final String userId;
   final String productId;
   final String productName;
   final String productImage;
@@ -13,7 +13,7 @@ class WishlistModel {
 
   const WishlistModel({
     this.id,
-    this.userId,
+    required this.userId,
     required this.productId,
     required this.productName,
     required this.productImage,
@@ -26,7 +26,7 @@ class WishlistModel {
   factory WishlistModel.fromMap(Map<String, dynamic> map) {
     return WishlistModel(
       id: map['id'] as int?,
-      userId: map['user_id'] as int?,
+      userId: map['user_id']?.toString() ?? 'guest',
       productId: map['product_id'] as String? ?? '',
       productName: map['product_name'] as String? ?? '',
       productImage: map['product_image'] as String? ?? '',
@@ -51,7 +51,8 @@ class WishlistModel {
   }
 
   /// Create a WishlistModel from a ProductModel.
-  factory WishlistModel.fromProduct(ProductModel product, {int? userId}) {
+  factory WishlistModel.fromProduct(ProductModel product,
+      {required String userId}) {
     return WishlistModel(
       userId: userId,
       productId: product.id,
@@ -66,7 +67,7 @@ class WishlistModel {
   /// Copy this model with optional updated values.
   WishlistModel copyWith({
     int? id,
-    int? userId,
+    String? userId,
     String? productId,
     String? productName,
     String? productImage,

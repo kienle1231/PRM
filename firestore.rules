@@ -25,6 +25,26 @@ service cloud.firestore {
     }
 
     // ── Helper function ───────────────────────────────────────────────────────
+    match /users/{userId} {
+      allow read: if request.auth != null &&
+        (request.auth.uid == userId || isAdmin());
+
+      allow create, update: if request.auth != null &&
+        request.auth.uid == userId &&
+        request.resource.data.keys().hasOnly([
+          'name', 'email', 'phone', 'avatar', 'role', 'isDisabled',
+          'createdAt', 'updatedAt'
+        ]) &&
+        request.resource.data.email == request.auth.token.email &&
+        request.resource.data.role == roleForSignedInUser();
+    }
+
+    function roleForSignedInUser() {
+      return request.auth.token.email == 'admin@kiencare.vn'
+        ? 'admin'
+        : 'user';
+    }
+
     function isAdmin() {
       return request.auth != null &&
         exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&

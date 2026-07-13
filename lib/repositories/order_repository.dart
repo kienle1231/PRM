@@ -17,7 +17,7 @@ abstract class OrderRepository {
 /// Persists orders locally using SQLite.
 class SQLiteOrderRepository implements OrderRepository {
   static const String _databaseName = 'kiencare_orders.db';
-  static const int _databaseVersion = 1;
+  static const int _databaseVersion = 2;
   static const String _ordersTable = 'orders';
   static const String _itemsTable = 'order_items';
 
@@ -34,25 +34,36 @@ class SQLiteOrderRepository implements OrderRepository {
       path,
       version: _databaseVersion,
       onCreate: _onCreate,
+      onUpgrade: _onUpgrade,
+      onConfigure: (db) => db.execute('PRAGMA foreign_keys = ON'),
     );
 
     return _database!;
   }
 
   Future<void> _onCreate(Database db, int version) async {
+    await _createTables(db);
+    await _createIndexes(db);
+  }
+
+  Future<void> _createTables(DatabaseExecutor db) async {
     await db.execute('''
       CREATE TABLE $_ordersTable (
-        id TEXT PRIMARY KEY,
-        user_id TEXT NOT NULL,
-        subtotal REAL NOT NULL,
-        shipping_fee REAL NOT NULL,
-        total REAL NOT NULL,
-        status TEXT NOT NULL,
+        id TEXT NOT NULL PRIMARY KEY CHECK(length(trim(id)) > 0),
+        user_id TEXT NOT NULL CHECK(length(trim(user_id)) > 0),
+        subtotal REAL NOT NULL CHECK(subtotal >= 0),
+        shipping_fee REAL NOT NULL DEFAULT 0 CHECK(shipping_fee >= 0),
+        total REAL NOT NULL CHECK(total >= 0),
+        status TEXT NOT NULL DEFAULT 'pending'
+          CHECK(status IN (
+            'pending', 'paid', 'confirmed', 'shipping',
+            'completed', 'delivered', 'cancelled'
+          )),
         customer_name TEXT NOT NULL,
         customer_phone TEXT NOT NULL,
         shipping_address TEXT NOT NULL,
         note TEXT,
-        payment_method TEXT NOT NULL,
+        payment_method TEXT NOT NULL CHECK(length(trim(payment_method)) > 0),
         created_at TEXT NOT NULL,
         updated_at TEXT
       )
@@ -62,23 +73,80 @@ class SQLiteOrderRepository implements OrderRepository {
       CREATE TABLE $_itemsTable (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         order_id TEXT NOT NULL,
-        product_id TEXT NOT NULL,
+        product_id TEXT NOT NULL CHECK(length(trim(product_id)) > 0),
         name TEXT NOT NULL,
-        price REAL NOT NULL,
-        original_price REAL NOT NULL,
+        price REAL NOT NULL CHECK(price >= 0),
+        original_price REAL NOT NULL CHECK(original_price >= 0),
         image_url TEXT NOT NULL,
-        quantity INTEGER NOT NULL,
-        stock INTEGER NOT NULL,
+        quantity INTEGER NOT NULL DEFAULT 1 CHECK(quantity > 0),
+        stock INTEGER NOT NULL DEFAULT 0 CHECK(stock >= 0),
+        UNIQUE(order_id, product_id),
         FOREIGN KEY(order_id) REFERENCES $_ordersTable(id) ON DELETE CASCADE
       )
     ''');
+  }
 
+  Future<void> _createIndexes(DatabaseExecutor db) async {
     await db.execute(
       'CREATE INDEX idx_orders_user_id ON $_ordersTable(user_id)',
     );
     await db.execute(
       'CREATE INDEX idx_order_items_order_id ON $_itemsTable(order_id)',
     );
+  }
+
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion >= 2) return;
+
+    await db.execute('ALTER TABLE $_itemsTable RENAME TO ${_itemsTable}_old');
+    await db.execute('ALTER TABLE $_ordersTable RENAME TO ${_ordersTable}_old');
+    await _createTables(db);
+
+    await db.execute('''
+      INSERT INTO $_ordersTable (
+        id, user_id, subtotal, shipping_fee, total, status, customer_name,
+        customer_phone, shipping_address, note, payment_method, created_at,
+        updated_at
+      )
+      SELECT
+        id, user_id,
+        CASE WHEN subtotal < 0 THEN 0 ELSE subtotal END,
+        CASE WHEN shipping_fee < 0 THEN 0 ELSE shipping_fee END,
+        CASE WHEN total < 0 THEN 0 ELSE total END,
+        CASE
+          WHEN status IN (
+            'pending', 'paid', 'confirmed', 'shipping',
+            'completed', 'delivered', 'cancelled'
+          ) THEN status
+          ELSE 'pending'
+        END,
+        customer_name, customer_phone, shipping_address, note,
+        payment_method, created_at, updated_at
+      FROM ${_ordersTable}_old
+      WHERE trim(id) <> '' AND trim(user_id) <> ''
+        AND trim(payment_method) <> ''
+    ''');
+
+    await db.execute('''
+      INSERT OR IGNORE INTO $_itemsTable (
+        id, order_id, product_id, name, price, original_price, image_url,
+        quantity, stock
+      )
+      SELECT
+        item.id, item.order_id, item.product_id, item.name,
+        CASE WHEN item.price < 0 THEN 0 ELSE item.price END,
+        CASE WHEN item.original_price < 0 THEN 0 ELSE item.original_price END,
+        item.image_url,
+        CASE WHEN item.quantity <= 0 THEN 1 ELSE item.quantity END,
+        CASE WHEN item.stock < 0 THEN 0 ELSE item.stock END
+      FROM ${_itemsTable}_old AS item
+      INNER JOIN $_ordersTable AS parent ON parent.id = item.order_id
+      WHERE trim(item.product_id) <> ''
+    ''');
+
+    await db.execute('DROP TABLE ${_itemsTable}_old');
+    await db.execute('DROP TABLE ${_ordersTable}_old');
+    await _createIndexes(db);
   }
 
   Future<void> _init() async {

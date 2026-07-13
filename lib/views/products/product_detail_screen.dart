@@ -46,13 +46,16 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
   }
 
   void _addToCart(ProductModel product, CartViewModel cartVM) {
+    final messenger = ScaffoldMessenger.of(context);
     final currentInCart = cartVM.quantityInCart(product.id);
     if (currentInCart + _quantity > product.stock) {
-      ScaffoldMessenger.of(context).showSnackBar(
+      messenger.removeCurrentSnackBar();
+      messenger.showSnackBar(
         SnackBar(
           content: Text(
               'Không thể thêm. Tồn kho: ${product.stock}, đã có $currentInCart trong giỏ'),
           backgroundColor: AppColors.error,
+          duration: const Duration(seconds: 3),
           behavior: SnackBarBehavior.floating,
           margin: const EdgeInsets.all(12),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -61,18 +64,24 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
       return;
     }
     cartVM.addToCart(product, quantity: _quantity);
-    ScaffoldMessenger.of(context).showSnackBar(
+    messenger.removeCurrentSnackBar();
+    messenger.showSnackBar(
       SnackBar(
         content: Text(
             'Đã thêm $_quantity ${product.name.length > 20 ? '${product.name.substring(0, 20)}...' : product.name} vào giỏ'),
         backgroundColor: AppColors.success,
+        duration: const Duration(seconds: 3),
+        persist: false,
         behavior: SnackBarBehavior.floating,
         margin: const EdgeInsets.all(12),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         action: SnackBarAction(
           label: 'Xem giỏ',
           textColor: Colors.white,
-          onPressed: () => Navigator.pushNamed(context, AppRoutes.cart),
+          onPressed: () {
+            messenger.removeCurrentSnackBar();
+            Navigator.pushNamed(context, AppRoutes.cart);
+          },
         ),
       ),
     );

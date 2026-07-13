@@ -40,7 +40,7 @@ class WishlistDatabaseService {
 
       return await openDatabase(
         path,
-        version: 2,
+        version: 3,
         onCreate: _onCreate,
         onUpgrade: _onUpgrade,
       );
@@ -52,30 +52,33 @@ class WishlistDatabaseService {
 
   /// Create SQLite table schema.
   Future<void> _onCreate(Database db, int version) async {
-    await db.execute('''
-      CREATE TABLE wishlist (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER NOT NULL,
-        product_id TEXT NOT NULL,
-        product_name TEXT,
-        product_image TEXT,
-        price REAL,
-        rating REAL,
-        created_at TEXT,
-        UNIQUE(user_id, product_id)
-      )
-    ''');
+    await _createWishlistTable(db);
     debugPrint('[WishlistDB] Database table created successfully.');
   }
 
+  Future<void> _createWishlistTable(DatabaseExecutor db) async {
+    await db.execute('''
+      CREATE TABLE wishlist (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id TEXT NOT NULL CHECK(length(trim(user_id)) > 0),
+        product_id TEXT NOT NULL CHECK(length(trim(product_id)) > 0),
+        product_name TEXT NOT NULL,
+        product_image TEXT NOT NULL,
+        price REAL NOT NULL CHECK(price >= 0),
+        rating REAL NOT NULL DEFAULT 0 CHECK(rating >= 0 AND rating <= 5),
+        created_at TEXT NOT NULL,
+        UNIQUE(user_id, product_id)
+      )
+    ''');
+  }
+
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    if (oldVersion >= 2) return;
+    if (oldVersion >= 3) return;
 
     await db.execute('ALTER TABLE wishlist RENAME TO wishlist_old');
-    await _onCreate(db, newVersion);
+    await _createWishlistTable(db);
     await db.execute('''
       INSERT OR IGNORE INTO wishlist (
-        id,
         user_id,
         product_id,
         product_name,
@@ -85,22 +88,26 @@ class WishlistDatabaseService {
         created_at
       )
       SELECT
-        id,
-        COALESCE(user_id, 1),
+        CAST(COALESCE(user_id, 1) AS TEXT),
         product_id,
-        product_name,
-        product_image,
-        price,
-        rating,
-        created_at
+        COALESCE(product_name, ''),
+        COALESCE(product_image, ''),
+        CASE WHEN price IS NULL OR price < 0 THEN 0 ELSE price END,
+        CASE
+          WHEN rating IS NULL OR rating < 0 THEN 0
+          WHEN rating > 5 THEN 5
+          ELSE rating
+        END,
+        COALESCE(created_at, CURRENT_TIMESTAMP)
       FROM wishlist_old
+      WHERE product_id IS NOT NULL AND trim(product_id) <> ''
     ''');
     await db.execute('DROP TABLE wishlist_old');
   }
 
   // ── Web Fallback (SharedPreferences) Helpers ─────────────────────────────────
 
-  Future<List<WishlistModel>> _getWebWishlist(int userId) async {
+  Future<List<WishlistModel>> _getWebWishlist(String userId) async {
     final prefs = await SharedPreferences.getInstance();
     final key = '$_webPrefsKeyPrefix$userId';
     final List<String>? jsonList = prefs.getStringList(key);
@@ -119,7 +126,7 @@ class WishlistDatabaseService {
         .toList();
   }
 
-  Future<void> _saveWebWishlist(int userId, List<WishlistModel> list) async {
+  Future<void> _saveWebWishlist(String userId, List<WishlistModel> list) async {
     final prefs = await SharedPreferences.getInstance();
     final key = '$_webPrefsKeyPrefix$userId';
     final jsonList = list.map((item) => jsonEncode(item.toMap())).toList();
@@ -132,7 +139,7 @@ class WishlistDatabaseService {
   Future<int> insertWishlist(WishlistModel wishlist) async {
     if (kIsWeb) {
       try {
-        final userId = wishlist.userId ?? 1;
+        final userId = wishlist.userId;
         final list = await _getWebWishlist(userId);
         // Prevent duplicates
         list.removeWhere((item) => item.productId == wishlist.productId);
@@ -159,7 +166,7 @@ class WishlistDatabaseService {
   }
 
   /// Delete a product from the wishlist by its product_id.
-  Future<int> deleteWishlist(String productId, int userId) async {
+  Future<int> deleteWishlist(String productId, String userId) async {
     if (kIsWeb) {
       try {
         final list = await _getWebWishlist(userId);
@@ -190,7 +197,7 @@ class WishlistDatabaseService {
   }
 
   /// Get all wishlist items for a specific user.
-  Future<List<WishlistModel>> getWishlist(int userId) async {
+  Future<List<WishlistModel>> getWishlist(String userId) async {
     if (kIsWeb) {
       try {
         return await _getWebWishlist(userId);
@@ -217,7 +224,7 @@ class WishlistDatabaseService {
   }
 
   /// Check if a product exists in the wishlist.
-  Future<bool> checkFavorite(String productId, int userId) async {
+  Future<bool> checkFavorite(String productId, String userId) async {
     if (kIsWeb) {
       try {
         final list = await _getWebWishlist(userId);
@@ -244,7 +251,7 @@ class WishlistDatabaseService {
   }
 
   /// Clear all wishlist items for a specific user.
-  Future<int> clearWishlist(int userId) async {
+  Future<int> clearWishlist(String userId) async {
     if (kIsWeb) {
       try {
         final prefs = await SharedPreferences.getInstance();
@@ -268,5 +275,54 @@ class WishlistDatabaseService {
       debugPrint('[WishlistDB] SQLite error clearing: $e');
       rethrow;
     }
+  }
+
+  /// Moves data written by the legacy numeric user key to the Firebase uid.
+  Future<void> migrateUserId(String oldUserId, String newUserId) async {
+    if (oldUserId == newUserId) return;
+
+    if (kIsWeb) {
+      final oldItems = await _getWebWishlist(oldUserId);
+      if (oldItems.isEmpty) return;
+
+      final newItems = await _getWebWishlist(newUserId);
+      final existingProductIds = newItems.map((item) => item.productId).toSet();
+      for (final item in oldItems) {
+        if (existingProductIds.add(item.productId)) {
+          newItems.add(item.copyWith(userId: newUserId));
+        }
+      }
+      await _saveWebWishlist(newUserId, newItems);
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('$_webPrefsKeyPrefix$oldUserId');
+      return;
+    }
+
+    final db = await database;
+    await db.transaction((txn) async {
+      await txn.rawInsert(
+        '''
+        INSERT OR IGNORE INTO wishlist (
+          user_id,
+          product_id,
+          product_name,
+          product_image,
+          price,
+          rating,
+          created_at
+        )
+        SELECT ?, product_id, product_name, product_image, price, rating, created_at
+        FROM wishlist
+        WHERE user_id = ?
+        ''',
+        [newUserId, oldUserId],
+      );
+      await txn.delete(
+        'wishlist',
+        where: 'user_id = ?',
+        whereArgs: [oldUserId],
+      );
+    });
   }
 }

@@ -256,7 +256,7 @@ class _AddToCartButton extends StatelessWidget {
           onTap: canAdd
               ? () {
                   cartVM.addToCart(product);
-                  ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                  ScaffoldMessenger.of(context).removeCurrentSnackBar();
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: const Text('Đã thêm vào giỏ hàng ✓'),
@@ -271,7 +271,7 @@ class _AddToCartButton extends StatelessWidget {
                 }
               : (atStockLimit
                   ? () {
-                      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                      ScaffoldMessenger.of(context).removeCurrentSnackBar();
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content:

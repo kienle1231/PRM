@@ -15,8 +15,8 @@ class WishlistProvider extends ChangeNotifier {
   bool _isLoading = false;
   String? _errorMessage;
 
-  static const int _fallbackUserId = 1;
-  int _activeUserId = _fallbackUserId;
+  static const String _fallbackUserId = 'guest';
+  String _activeUserId = _fallbackUserId;
 
   /// Cached list of wishlist items.
   List<WishlistModel> get wishlist => _wishlistItems;
@@ -31,26 +31,30 @@ class WishlistProvider extends ChangeNotifier {
   String? get errorMessage => _errorMessage;
 
   Future<void> setActiveUser(String? firebaseUid) async {
-    final nextUserId = _localUserId(firebaseUid);
+    final nextUserId = firebaseUid == null || firebaseUid.isEmpty
+        ? _fallbackUserId
+        : firebaseUid;
     if (nextUserId == _activeUserId && _wishlistItems.isNotEmpty) return;
 
+    final legacyUserId = _legacyLocalUserId(firebaseUid).toString();
+    await _dbService.migrateUserId(legacyUserId, nextUserId);
     _activeUserId = nextUserId;
     await loadWishlist();
   }
 
-  int _localUserId(String? firebaseUid) {
-    if (firebaseUid == null || firebaseUid.isEmpty) return _fallbackUserId;
+  int _legacyLocalUserId(String? firebaseUid) {
+    if (firebaseUid == null || firebaseUid.isEmpty) return 1;
 
     var hash = 0x811C9DC5;
     for (final unit in firebaseUid.codeUnits) {
       hash ^= unit;
       hash = (hash * 0x01000193) & 0x7fffffff;
     }
-    return hash == 0 ? _fallbackUserId : hash;
+    return hash == 0 ? 1 : hash;
   }
 
   /// Load wishlist from SQLite database into memory cache.
-  Future<void> loadWishlist({int? userId}) async {
+  Future<void> loadWishlist({String? userId}) async {
     final effectiveUserId = userId ?? _activeUserId;
     _isLoading = true;
     _errorMessage = null;
@@ -71,7 +75,7 @@ class WishlistProvider extends ChangeNotifier {
   }
 
   /// Add a product to the wishlist database and memory cache.
-  Future<void> addToWishlist(ProductModel product, {int? userId}) async {
+  Future<void> addToWishlist(ProductModel product, {String? userId}) async {
     final effectiveUserId = userId ?? _activeUserId;
     _errorMessage = null;
 
@@ -98,7 +102,7 @@ class WishlistProvider extends ChangeNotifier {
   }
 
   /// Remove a product from the wishlist database and memory cache.
-  Future<void> removeFromWishlist(String productId, {int? userId}) async {
+  Future<void> removeFromWishlist(String productId, {String? userId}) async {
     final effectiveUserId = userId ?? _activeUserId;
     _errorMessage = null;
 
@@ -135,7 +139,7 @@ class WishlistProvider extends ChangeNotifier {
   }
 
   /// Clear the entire wishlist database and memory cache.
-  Future<void> clearWishlist({int? userId}) async {
+  Future<void> clearWishlist({String? userId}) async {
     final effectiveUserId = userId ?? _activeUserId;
     _errorMessage = null;
     final originalItems = List<WishlistModel>.from(_wishlistItems);

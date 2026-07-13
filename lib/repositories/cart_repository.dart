@@ -13,7 +13,7 @@ abstract class CartRepository {
 /// Persists cart data locally using SQLite.
 class SQLiteCartRepository implements CartRepository {
   static const String _databaseName = 'kiencare_cart.db';
-  static const int _databaseVersion = 1;
+  static const int _databaseVersion = 2;
   static const String _tableName = 'cart_items';
 
   static Database? _database;
@@ -27,28 +27,54 @@ class SQLiteCartRepository implements CartRepository {
     _database = await openDatabase(
       path,
       version: _databaseVersion,
-      onCreate: (db, version) async {
-        await db.execute('''
-          CREATE TABLE $_tableName (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id TEXT NOT NULL,
-            product_id TEXT NOT NULL,
-            name TEXT NOT NULL,
-            price REAL NOT NULL,
-            original_price REAL NOT NULL,
-            image_url TEXT NOT NULL,
-            quantity INTEGER NOT NULL,
-            stock INTEGER NOT NULL,
-            sort_order INTEGER NOT NULL,
-            created_at TEXT NOT NULL,
-            updated_at TEXT NOT NULL,
-            UNIQUE(user_id, product_id)
-          )
-        ''');
-      },
+      onCreate: (db, version) => _createTable(db),
+      onUpgrade: _onUpgrade,
     );
 
     return _database!;
+  }
+
+  Future<void> _createTable(DatabaseExecutor db) => db.execute('''
+        CREATE TABLE $_tableName (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id TEXT NOT NULL CHECK(length(trim(user_id)) > 0),
+          product_id TEXT NOT NULL CHECK(length(trim(product_id)) > 0),
+          name TEXT NOT NULL,
+          price REAL NOT NULL CHECK(price >= 0),
+          original_price REAL NOT NULL CHECK(original_price >= 0),
+          image_url TEXT NOT NULL,
+          quantity INTEGER NOT NULL DEFAULT 1 CHECK(quantity > 0),
+          stock INTEGER NOT NULL DEFAULT 0 CHECK(stock >= 0),
+          sort_order INTEGER NOT NULL DEFAULT 0 CHECK(sort_order >= 0),
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL,
+          UNIQUE(user_id, product_id)
+        )
+      ''');
+
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion >= 2) return;
+
+    await db.execute('ALTER TABLE $_tableName RENAME TO ${_tableName}_old');
+    await _createTable(db);
+    await db.execute('''
+      INSERT INTO $_tableName (
+        id, user_id, product_id, name, price, original_price, image_url,
+        quantity, stock, sort_order, created_at, updated_at
+      )
+      SELECT
+        id, user_id, product_id, name,
+        CASE WHEN price < 0 THEN 0 ELSE price END,
+        CASE WHEN original_price < 0 THEN 0 ELSE original_price END,
+        image_url,
+        CASE WHEN quantity <= 0 THEN 1 ELSE quantity END,
+        CASE WHEN stock < 0 THEN 0 ELSE stock END,
+        CASE WHEN sort_order < 0 THEN 0 ELSE sort_order END,
+        created_at, updated_at
+      FROM ${_tableName}_old
+      WHERE trim(user_id) <> '' AND trim(product_id) <> ''
+    ''');
+    await db.execute('DROP TABLE ${_tableName}_old');
   }
 
   @override
