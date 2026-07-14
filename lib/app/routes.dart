@@ -25,6 +25,8 @@ import '../views/admin/admin_product_list_screen.dart';
 import '../views/admin/admin_product_form_screen.dart';
 import '../views/admin/admin_revenue_screen.dart';
 import '../views/admin/admin_user_list_screen.dart';
+import '../views/admin/admin_chat_list_screen.dart';
+import '../views/admin/admin_chat_detail_screen.dart';
 import '../views/notifications/notifications_screen.dart';
 import '../views/chat/chat_screen.dart';
 import '../views/profile/profile_screen.dart';
@@ -53,6 +55,8 @@ abstract class AppRoutes {
   static const String adminProductForm = '/admin-product-form';
   static const String adminRevenue = '/admin-revenue';
   static const String adminUsers = '/admin-users';
+  static const String adminChats = '/admin-chats';
+  static const String adminChatDetail = '/admin-chat-detail';
   static const String notifications = '/notifications';
   static const String chat = '/chat';
   static const String profile = '/profile';
@@ -140,6 +144,13 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       break;
     case AppRoutes.adminUsers:
       page = const AdminUserListScreen();
+      break;
+    case AppRoutes.adminChats:
+      page = const AdminChatListScreen();
+      break;
+    case AppRoutes.adminChatDetail:
+      final userId = settings.arguments as String;
+      page = AdminChatDetailScreen(userId: userId);
       break;
     case AppRoutes.notifications:
       page = const NotificationsScreen();

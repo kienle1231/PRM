@@ -356,6 +356,18 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                 context, AppRoutes.adminUsers),
                           ),
                           _MenuCard(
+                            icon: Icons.support_agent_rounded,
+                            label: 'Hỗ trợ khách',
+                            description: 'Xem và trả lời chat',
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFFFF9933), Color(0xFFFF5E62)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            onTap: () => Navigator.pushNamed(
+                                context, AppRoutes.adminChats),
+                          ),
+                          _MenuCard(
                             icon: Icons.refresh_rounded,
                             label: 'Làm mới',
                             description: 'Đồng bộ dữ liệu',

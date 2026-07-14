@@ -82,13 +82,13 @@ class ProfileScreen extends StatelessWidget {
                   isDark: isDark,
                 ),
 
-                // ── Admin Panel Banner ──────────────────────────────────
+                // ── Admin Panel Banner (chỉ hiện với admin) ─────────────
                 if (user.isAdmin)
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
                     child: GestureDetector(
-                      onTap: () => Navigator.pushNamed(
-                          context, AppRoutes.adminDashboard),
+                      onTap: () =>
+                          Navigator.pushNamed(context, AppRoutes.adminDashboard),
                       child: Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
@@ -104,8 +104,8 @@ class ProfileScreen extends StatelessWidget {
                           borderRadius: BorderRadius.circular(16),
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFF1A1A2E)
-                                  .withValues(alpha: 0.3),
+                              color:
+                                  const Color(0xFF1A1A2E).withValues(alpha: 0.3),
                               blurRadius: 12,
                               offset: const Offset(0, 6),
                             ),
@@ -116,8 +116,7 @@ class ProfileScreen extends StatelessWidget {
                             Container(
                               padding: const EdgeInsets.all(10),
                               decoration: BoxDecoration(
-                                color:
-                                    AppColors.secondary.withValues(alpha: 0.2),
+                                color: AppColors.secondary.withValues(alpha: 0.2),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: const Icon(

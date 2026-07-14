@@ -42,7 +42,8 @@ class ChatViewModel extends ChangeNotifier {
       _messages = msgs;
       _isLoading = false;
       notifyListeners();
-    }, onError: (_) {
+    }, onError: (e) {
+      print('Chat subscribe error: $e');
       _isLoading = false;
       notifyListeners();
     });
@@ -65,8 +66,8 @@ class ChatViewModel extends ChangeNotifier {
 
     try {
       await _repo.sendMessage(_chatId, message);
-    } catch (_) {
-      // Silent fail
+    } catch (e) {
+      print('Chat sendMessage error: $e');
     } finally {
       _isSending = false;
       notifyListeners();
