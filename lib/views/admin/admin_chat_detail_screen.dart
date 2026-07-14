@@ -3,30 +3,27 @@ import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_strings.dart';
 import '../../models/message_model.dart';
-import '../../viewmodels/auth_viewmodel.dart';
 import '../../viewmodels/chat_viewmodel.dart';
 
-/// Customer support real-time chat screen.
-class ChatScreen extends StatefulWidget {
-  const ChatScreen({super.key});
+class AdminChatDetailScreen extends StatefulWidget {
+  final String userId;
+  const AdminChatDetailScreen({super.key, required this.userId});
 
   @override
-  State<ChatScreen> createState() => _ChatScreenState();
+  State<AdminChatDetailScreen> createState() => _AdminChatDetailScreenState();
 }
 
-class _ChatScreenState extends State<ChatScreen> {
+class _AdminChatDetailScreenState extends State<AdminChatDetailScreen> {
   final _textCtrl = TextEditingController();
   final _scrollCtrl = ScrollController();
   late ChatViewModel _chatVM;
-  late AuthViewModel _authVM;
 
   @override
   void initState() {
     super.initState();
     _chatVM = context.read<ChatViewModel>();
-    _authVM = context.read<AuthViewModel>();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _chatVM.subscribe(_authVM.currentUser?.id ?? 'guest');
+      _chatVM.subscribe(widget.userId);
       _scrollToBottom();
     });
   }
@@ -55,8 +52,8 @@ class _ChatScreenState extends State<ChatScreen> {
 
     await _chatVM.sendMessage(
       text,
-      _authVM.currentUser?.id ?? 'guest',
-      _authVM.currentUser?.name ?? 'Khách hàng',
+      'support',
+      'LAPTOPHUB Support',
     );
     WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
   }
@@ -67,41 +64,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Row(
-          children: [
-            Container(
-              width: 36,
-              height: 36,
-              decoration: const BoxDecoration(
-                gradient: AppColors.primaryGradient,
-                shape: BoxShape.circle,
-              ),
-              child: const Center(
-                child: Text('LH',
-                    style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 12)),
-              ),
-            ),
-            const SizedBox(width: 10),
-            const Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(AppStrings.supportTeam,
-                      style:
-                          TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
-                  Text('Đang hoạt động',
-                      style: TextStyle(
-                          fontSize: 11,
-                          color: Colors.white70,
-                          fontWeight: FontWeight.w400)),
-                ],
-              ),
-            ),
-          ],
-        ),
+        title: Text('Chat: ${widget.userId}', style: const TextStyle(fontSize: 16)),
       ),
       body: Column(
         children: [
@@ -124,8 +87,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   itemCount: vm.messages.length,
                   itemBuilder: (_, i) {
                     final msg = vm.messages[i];
-                    final isMe =
-                        msg.senderId == (_authVM.currentUser?.id ?? 'guest');
+                    final isMe = msg.isSupport;
                     return _MessageBubble(
                         message: msg, isMe: isMe, isDark: isDark);
                   },
@@ -171,7 +133,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 maxLines: 4,
                 minLines: 1,
                 decoration: const InputDecoration(
-                  hintText: AppStrings.chatHint,
+                  hintText: 'Nhập tin nhắn trả lời...',
                   border: InputBorder.none,
                   contentPadding:
                       EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -243,14 +205,14 @@ class _MessageBubble extends StatelessWidget {
             Container(
               width: 28,
               height: 28,
-              decoration: const BoxDecoration(
-                gradient: AppColors.primaryGradient,
+              decoration: BoxDecoration(
+                color: AppColors.primarySurface,
                 shape: BoxShape.circle,
               ),
-              child: const Center(
-                child: Text('LH',
+              child: Center(
+                child: Text('U',
                     style: TextStyle(
-                        color: Colors.white,
+                        color: AppColors.primary,
                         fontWeight: FontWeight.w800,
                         fontSize: 9)),
               ),

@@ -1,10 +1,12 @@
 import 'dart:async';
 import '../models/message_model.dart';
+import '../models/chat_room_model.dart';
 import 'package:uuid/uuid.dart';
 
 /// Abstract interface for chat operations.
 abstract class ChatRepository {
   Stream<List<MessageModel>> getMessages(String chatId);
+  Stream<List<ChatRoomModel>> getChatRooms();
   Future<void> sendMessage(String chatId, MessageModel message);
   Future<void> markMessagesAsRead(String chatId, String userId);
 }
@@ -40,6 +42,24 @@ class MockChatRepository implements ChatRepository {
   }
 
   @override
+  Stream<List<ChatRoomModel>> getChatRooms() async* {
+    // Just yield a mock empty list or derived list for now.
+    yield _messages.entries.map((e) {
+      final msgs = e.value;
+      if (msgs.isEmpty) return null;
+      final lastMsg = msgs.last;
+      return ChatRoomModel(
+        id: e.key,
+        userId: e.key,
+        lastMessage: lastMsg.text,
+        lastMessageAt: lastMsg.timestamp,
+        unreadByAdmin: msgs.any((m) => !m.isSupport && !m.isRead),
+        createdAt: msgs.first.timestamp,
+      );
+    }).where((c) => c != null).cast<ChatRoomModel>().toList();
+  }
+
+  @override
   Stream<List<MessageModel>> getMessages(String chatId) {
     _controllers[chatId] ??= StreamController<List<MessageModel>>.broadcast();
     // Emit initial messages
@@ -49,15 +69,6 @@ class MockChatRepository implements ChatRepository {
       }
     });
     return _controllers[chatId]!.stream;
-
-    // TODO: Firebase — Real-time Firestore stream
-    // return FirebaseFirestore.instance
-    //     .collection('messages').doc(chatId).collection('messages')
-    //     .orderBy('timestamp', descending: false)
-    //     .snapshots()
-    //     .map((snap) => snap.docs
-    //         .map((d) => MessageModel.fromJson({'id': d.id, ...d.data()}))
-    //         .toList());
   }
 
   @override

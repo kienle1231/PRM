@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:uuid/uuid.dart';
 
 import '../models/message_model.dart';
+import '../models/chat_room_model.dart';
 import 'chat_repository.dart';
 
 /// Firebase Firestore real-time implementation of [ChatRepository].
@@ -23,6 +24,18 @@ class FirebaseChatRepository implements ChatRepository {
 
   CollectionReference<Map<String, dynamic>> _messages(String chatId) =>
       _chatDoc(chatId).collection('messages');
+
+  // ── Get Chat Rooms Stream ─────────────────────────────────────────────────
+  @override
+  Stream<List<ChatRoomModel>> getChatRooms() {
+    return _db
+        .collection('chats')
+        .orderBy('lastMessageAt', descending: true)
+        .snapshots()
+        .map((snap) => snap.docs
+            .map((doc) => ChatRoomModel.fromFirestore(doc))
+            .toList());
+  }
 
   // ── Get Messages Stream ───────────────────────────────────────────────────
   @override
@@ -96,12 +109,15 @@ class FirebaseChatRepository implements ChatRepository {
           .where('senderId', isNotEqualTo: userId)
           .get();
 
-      if (snap.docs.isEmpty) return;
-
       final batch = _db.batch();
       for (final doc in snap.docs) {
         batch.update(doc.reference, {'isRead': true});
       }
+
+      if (userId == 'support') {
+        batch.update(_chatDoc(chatId), {'unreadByAdmin': false});
+      }
+
       await batch.commit();
     } catch (_) {
       // Silent fail
